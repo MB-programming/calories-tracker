@@ -366,5 +366,6 @@ window.addEventListener('load', () => {
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/framer-motion@11/dist/framer-motion.js"></script>
+<script src="assets/js/theme.js"></script>
 </body>
 </html>

@@ -52,6 +52,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
       <div class="tabs" style="margin-bottom:1rem">
         <button class="tab-btn active" onclick="setMode('camera')"><i class="bi bi-camera"></i> الكاميرا</button>
         <button class="tab-btn" onclick="setMode('upload')"><i class="bi bi-folder2-open"></i> رفع صورة</button>
+        <button class="tab-btn" onclick="setMode('text')"><i class="bi bi-chat-dots-fill"></i> اسأل / صف</button>
       </div>
 
       <!-- Camera Mode -->
@@ -99,6 +100,17 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
             <button class="btn btn-secondary" onclick="resetUpload()"><i class="bi bi-arrow-repeat"></i> اختر أخرى</button>
           </div>
         </div>
+      </div>
+      <!-- Text Query Mode -->
+      <div id="text-mode" style="display:none">
+        <div style="margin-bottom:0.75rem;color:var(--text-muted);font-size:0.9rem">
+          <i class="bi bi-info-circle-fill"></i> صف الطعام أو اسأل عن السعرات — مثال: "طبق كوشري كبير" أو "كم سعرة في شاورما دجاج؟"
+        </div>
+        <textarea id="text-query-input" class="form-control" rows="4"
+          placeholder="اكتب هنا... مثال: فطير مشلتت بالعسل قطعتين" style="resize:vertical"></textarea>
+        <button class="btn btn-primary btn-full" style="margin-top:0.75rem" onclick="analyzeText()" id="text-analyze-btn">
+          <i class="bi bi-robot"></i> تحليل
+        </button>
       </div>
     </div>
 
@@ -211,10 +223,39 @@ async function capturePhoto() {
 function setMode(mode) {
   document.getElementById('camera-mode').style.display  = mode==='camera' ? '' : 'none';
   document.getElementById('upload-mode').style.display  = mode==='upload' ? '' : 'none';
+  document.getElementById('text-mode').style.display    = mode==='text'   ? '' : 'none';
   document.querySelectorAll('.tabs .tab-btn').forEach((b,i) =>
-    b.classList.toggle('active', (i===0&&mode==='camera')||(i===1&&mode==='upload'))
+    b.classList.toggle('active', (i===0&&mode==='camera')||(i===1&&mode==='upload')||(i===2&&mode==='text'))
   );
   if (mode === 'camera') startCamera(); else stopCamera();
+}
+
+async function analyzeText() {
+  const input = document.getElementById('text-query-input');
+  const query = input.value.trim();
+  if (!query) return;
+
+  const btn = document.getElementById('text-analyze-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0"></div> جاري التحليل...';
+
+  const fd = new FormData();
+  fd.append('text_query', query);
+
+  try {
+    const res  = await fetch('api/analyze.php', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!data.success) {
+      showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> ${data.message}</div>`, false);
+    } else {
+      showAnalysisResult(data.data, null);
+    }
+  } catch(err) {
+    showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> خطأ في الاتصال بالخادم</div>`, false);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-robot"></i> تحليل';
 }
 
 function handleFileUpload(e) {
@@ -433,5 +474,6 @@ window.addEventListener('load', () => {
 window.addEventListener('beforeunload', stopCamera);
 </script>
 <script src="https://cdn.jsdelivr.net/npm/framer-motion@11/dist/framer-motion.js"></script>
+<script src="assets/js/theme.js"></script>
 </body>
 </html>

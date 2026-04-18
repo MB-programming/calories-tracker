@@ -25,9 +25,11 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
   </div>
   <ul class="navbar-nav">
     <li><a href="index.php" class="active">🏠 الرئيسية</a></li>
-    <li><a href="camera.php">📸 تصوير الطعام</a></li>
+    <li><a href="camera.php">📸 تصوير</a></li>
+    <li><a href="workout.php">🏋️ التمارين</a></li>
     <li><a href="history.php">📅 السجل</a></li>
     <li><a href="reports.php">📊 التقارير</a></li>
+    <li><a href="profile.php">👤 ملفي</a></li>
     <?php if (isAdmin()): ?>
     <li><a href="admin/index.php">⚙️ الإدارة</a></li>
     <?php endif; ?>

@@ -1,0 +1,27 @@
+Options -Indexes
+
+# PHP Settings
+php_value upload_max_filesize 10M
+php_value post_max_size 12M
+php_value max_execution_time 60
+
+# Protect sensitive files
+<FilesMatch "\.(sql|env|json|md)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Allow access to uploads images only
+<FilesMatch "^uploads/">
+  Order deny,allow
+</FilesMatch>
+
+# Redirect root to index
+DirectoryIndex index.php login.php
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+</IfModule>

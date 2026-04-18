@@ -101,7 +101,7 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   const data = await res.json();
   if (data.success) {
     showAlert('تم تسجيل الدخول بنجاح! جاري التحويل...','success');
-    setTimeout(() => location.href = data.role === 'admin' ? 'admin/index.php' : 'index.php', 800);
+    setTimeout(() => location.href = data.redirect || 'index.php', 800);
   } else {
     showAlert(data.message);
     btn.disabled = false; btn.innerHTML = '<span>🚀</span> دخول';
@@ -117,12 +117,12 @@ document.getElementById('register-form').addEventListener('submit', async e => {
   const res = await fetch('api/auth.php', {method:'POST',body:fd});
   const data = await res.json();
   if (data.success) {
-    showAlert('تم إنشاء الحساب! يمكنك تسجيل الدخول الآن.','success');
-    setTimeout(() => showTab('login'), 1200);
+    showAlert('تم إنشاء الحساب! جاري إعداد ملفك الشخصي...','success');
+    setTimeout(() => location.href = data.redirect || 'setup_profile.php', 900);
   } else {
     showAlert(data.message);
+    btn.disabled = false; btn.innerHTML = '<span>✨</span> إنشاء الحساب';
   }
-  btn.disabled = false; btn.innerHTML = '<span>✨</span> إنشاء الحساب';
 });
 
 // Framer Motion entrance animation

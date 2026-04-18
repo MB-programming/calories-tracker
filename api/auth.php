@@ -27,8 +27,15 @@ if ($action === 'register') {
     $hash = password_hash($pass, PASSWORD_DEFAULT);
     $stmt = $pdo->prepare("INSERT INTO users (name, email, password, daily_goal) VALUES (?, ?, ?, ?)");
     $stmt->execute([$name, $email, $hash, $goal]);
+    $newId = $pdo->lastInsertId();
 
-    echo json_encode(['success' => true, 'message' => 'تم إنشاء الحساب بنجاح']);
+    // Auto-login after registration
+    $_SESSION['user_id']        = $newId;
+    $_SESSION['user_name']      = $name;
+    $_SESSION['role']           = 'user';
+    $_SESSION['daily_goal']     = $goal;
+
+    echo json_encode(['success' => true, 'message' => 'تم إنشاء الحساب بنجاح', 'redirect' => 'setup_profile.php']);
     exit;
 }
 
@@ -45,12 +52,17 @@ if ($action === 'login') {
         exit;
     }
 
-    $_SESSION['user_id']   = $user['id'];
-    $_SESSION['user_name'] = $user['name'];
-    $_SESSION['role']      = $user['role'];
-    $_SESSION['daily_goal']= $user['daily_goal'];
+    $_SESSION['user_id']        = $user['id'];
+    $_SESSION['user_name']      = $user['name'];
+    $_SESSION['role']           = $user['role'];
+    $_SESSION['daily_goal']     = $user['daily_goal'];
 
-    echo json_encode(['success' => true, 'role' => $user['role']]);
+    $profileComplete = isset($user['profile_complete']) ? (int)$user['profile_complete'] : 1;
+    $redirect = ($user['role'] === 'admin')
+        ? 'admin/index.php'
+        : ($profileComplete ? 'index.php' : 'setup_profile.php');
+
+    echo json_encode(['success' => true, 'role' => $user['role'], 'redirect' => $redirect]);
     exit;
 }
 

@@ -112,10 +112,16 @@ $userName = $_SESSION['user_name'];
               <div class="setting-desc">اختر الخدمة المستخدمة لتحليل صور الطعام</div>
             </div>
             <div class="setting-control">
-              <select name="ai_provider" id="ai-provider" class="form-control" style="width:220px" onchange="toggleProviderFields(this.value)">
-                <option value="gemini">Google Gemini</option>
-                <option value="openai">OpenAI GPT-4 Vision</option>
-                <option value="anthropic">Anthropic Claude</option>
+              <select name="ai_provider" id="ai-provider" class="form-control" style="width:260px" onchange="toggleProviderFields(this.value)">
+                <optgroup label="مجاني تماماً">
+                  <option value="gemini">Google Gemini (مجاني)</option>
+                  <option value="openrouter">OpenRouter (نماذج مجانية)</option>
+                  <option value="groq">Groq — Llama Vision (مجاني)</option>
+                </optgroup>
+                <optgroup label="مدفوع">
+                  <option value="openai">OpenAI GPT-4 Vision</option>
+                  <option value="anthropic">Anthropic Claude</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -203,6 +209,60 @@ $userName = $_SESSION['user_name'];
             </div>
           </div>
 
+          <!-- OpenRouter Fields -->
+          <div id="openrouter-fields" class="provider-fields">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">مفتاح OpenRouter API</div>
+                <div class="setting-desc">احصل على مفتاح مجاني من <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--primary)">OpenRouter</a> — يدعم نماذج مجانية بالكامل</div>
+              </div>
+              <div class="setting-control">
+                <input type="text" name="openrouter_api_key" id="openrouter-api-key" class="form-control"
+                  style="width:280px" placeholder="sk-or-...">
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">نموذج OpenRouter (مجاني)</div>
+                <div class="setting-desc">جميع النماذج أدناه مجانية تماماً وتدعم تحليل الصور</div>
+              </div>
+              <div class="setting-control">
+                <select name="openrouter_model" id="openrouter-model" class="form-control" style="width:320px">
+                  <option value="google/gemini-2.0-flash-exp:free">google/gemini-2.0-flash-exp:free — Gemini مجاني</option>
+                  <option value="meta-llama/llama-4-scout:free">meta-llama/llama-4-scout:free — Llama 4 Scout مجاني</option>
+                  <option value="qwen/qwen2.5-vl-72b-instruct:free">qwen/qwen2.5-vl-72b-instruct:free — Qwen Vision مجاني</option>
+                  <option value="meta-llama/llama-4-maverick:free">meta-llama/llama-4-maverick:free — Llama 4 Maverick مجاني</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Groq Fields -->
+          <div id="groq-fields" class="provider-fields">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">مفتاح Groq API</div>
+                <div class="setting-desc">احصل على مفتاح مجاني من <a href="https://console.groq.com/keys" target="_blank" style="color:var(--primary)">Groq Console</a> — سريع جداً ومجاني</div>
+              </div>
+              <div class="setting-control">
+                <input type="text" name="groq_api_key" id="groq-api-key" class="form-control"
+                  style="width:280px" placeholder="gsk_...">
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">نموذج Groq</div>
+                <div class="setting-desc">Llama 4 Scout هو النموذج الأسرع مع دعم رؤية الصور</div>
+              </div>
+              <div class="setting-control">
+                <select name="groq_model" id="groq-model" class="form-control" style="width:320px">
+                  <option value="meta-llama/llama-4-scout-17b-16e-instruct">llama-4-scout-17b — الأسرع مع الصور</option>
+                  <option value="meta-llama/llama-4-maverick-17b-128e-instruct">llama-4-maverick-17b — أقوى وأبطأ قليلاً</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div style="margin-top:1.5rem;display:flex;gap:10px">
             <button type="submit" class="btn btn-primary"><i class="bi bi-floppy-fill"></i> حفظ الإعدادات</button>
             <button type="button" class="btn btn-secondary" onclick="testConnection()" id="test-btn"><i class="bi bi-plug-fill"></i> اختبار الاتصال</button>
@@ -240,6 +300,25 @@ $userName = $_SESSION['user_name'];
             <li>أنشئ مفتاح جديد يبدأ بـ <code>sk-ant-</code></li>
             <li>انسخه في الحقل أعلاه</li>
             <li>استخدم <strong>claude-sonnet-4-6</strong> للتوازن المثالي بين الدقة والتكلفة</li>
+          </ol>
+        </div>
+        <div id="setup-guide-openrouter" style="display:none">
+          <ol style="padding-right:1.2rem;display:flex;flex-direction:column;gap:8px;color:var(--text-muted);font-size:0.9rem;line-height:1.7">
+            <li>اذهب إلى <strong style="color:var(--primary)">openrouter.ai</strong> وسجل حساباً مجانياً</li>
+            <li>افتح قسم "Keys" وأنشئ مفتاح API جديد يبدأ بـ <code>sk-or-</code></li>
+            <li>انسخه في الحقل أعلاه</li>
+            <li>اختر أي نموذج ينتهي بـ <strong>:free</strong> — جميعها مجانية تماماً</li>
+            <li>النموذج المُوصى: <strong>google/gemini-2.0-flash-exp:free</strong> للدقة العالية</li>
+            <li>لا يوجد حد يومي صارم — مناسب للاستخدام المكثف</li>
+          </ol>
+        </div>
+        <div id="setup-guide-groq" style="display:none">
+          <ol style="padding-right:1.2rem;display:flex;flex-direction:column;gap:8px;color:var(--text-muted);font-size:0.9rem;line-height:1.7">
+            <li>اذهب إلى <strong style="color:var(--primary)">console.groq.com</strong> وسجل حساباً مجانياً</li>
+            <li>افتح قسم "API Keys" وأنشئ مفتاح جديد يبدأ بـ <code>gsk_</code></li>
+            <li>انسخه في الحقل أعلاه</li>
+            <li>استخدم <strong>llama-4-scout-17b</strong> — أسرع نموذج مع دعم تحليل الصور</li>
+            <li>الحد المجاني: 14,400 طلب/يوم — أكثر من كافٍ للاستخدام العادي</li>
           </ol>
         </div>
       </div>
@@ -346,25 +425,33 @@ async function loadSettings() {
   if (!data.success) return;
   const s = data.settings;
 
-  const providerEl      = document.getElementById('ai-provider');
-  const geminiKeyEl     = document.getElementById('gemini-api-key');
-  const geminiModelEl   = document.getElementById('gemini-model');
-  const openaiKeyEl     = document.getElementById('openai-api-key');
-  const openaiModelEl   = document.getElementById('openai-model');
-  const anthropicKeyEl  = document.getElementById('anthropic-api-key');
-  const anthropicModelEl= document.getElementById('anthropic-model');
-  const appNameEl       = document.getElementById('app-name');
-  const goalEl          = document.getElementById('default-goal');
+  const providerEl         = document.getElementById('ai-provider');
+  const geminiKeyEl        = document.getElementById('gemini-api-key');
+  const geminiModelEl      = document.getElementById('gemini-model');
+  const openaiKeyEl        = document.getElementById('openai-api-key');
+  const openaiModelEl      = document.getElementById('openai-model');
+  const anthropicKeyEl     = document.getElementById('anthropic-api-key');
+  const anthropicModelEl   = document.getElementById('anthropic-model');
+  const openrouterKeyEl    = document.getElementById('openrouter-api-key');
+  const openrouterModelEl  = document.getElementById('openrouter-model');
+  const groqKeyEl          = document.getElementById('groq-api-key');
+  const groqModelEl        = document.getElementById('groq-model');
+  const appNameEl          = document.getElementById('app-name');
+  const goalEl             = document.getElementById('default-goal');
 
-  if (s.ai_provider)       providerEl.value       = s.ai_provider;
-  if (s.gemini_api_key)    geminiKeyEl.value       = s.gemini_api_key;
-  if (s.gemini_model)      geminiModelEl.value     = s.gemini_model;
-  if (s.openai_api_key)    openaiKeyEl.value       = s.openai_api_key;
-  if (s.openai_model)      openaiModelEl.value     = s.openai_model;
-  if (s.anthropic_api_key) anthropicKeyEl.value    = s.anthropic_api_key;
-  if (s.anthropic_model)   anthropicModelEl.value  = s.anthropic_model;
-  if (s.app_name)          appNameEl.value         = s.app_name;
-  if (s.default_daily_goal) goalEl.value           = s.default_daily_goal;
+  if (s.ai_provider)         providerEl.value          = s.ai_provider;
+  if (s.gemini_api_key)      geminiKeyEl.value          = s.gemini_api_key;
+  if (s.gemini_model)        geminiModelEl.value        = s.gemini_model;
+  if (s.openai_api_key)      openaiKeyEl.value          = s.openai_api_key;
+  if (s.openai_model)        openaiModelEl.value        = s.openai_model;
+  if (s.anthropic_api_key)   anthropicKeyEl.value       = s.anthropic_api_key;
+  if (s.anthropic_model)     anthropicModelEl.value     = s.anthropic_model;
+  if (s.openrouter_api_key)  openrouterKeyEl.value      = s.openrouter_api_key;
+  if (s.openrouter_model)    openrouterModelEl.value    = s.openrouter_model;
+  if (s.groq_api_key)        groqKeyEl.value            = s.groq_api_key;
+  if (s.groq_model)          groqModelEl.value          = s.groq_model;
+  if (s.app_name)            appNameEl.value            = s.app_name;
+  if (s.default_daily_goal)  goalEl.value               = s.default_daily_goal;
 
   toggleProviderFields(providerEl.value);
 }
@@ -483,9 +570,11 @@ function toggleProviderFields(provider) {
   const el = document.getElementById(provider + '-fields');
   if (el) el.classList.add('active');
 
-  document.getElementById('setup-guide-gemini').style.display    = provider === 'gemini'    ? '' : 'none';
-  document.getElementById('setup-guide-openai').style.display    = provider === 'openai'    ? '' : 'none';
-  document.getElementById('setup-guide-anthropic').style.display = provider === 'anthropic' ? '' : 'none';
+  const guides = ['gemini', 'openai', 'anthropic', 'openrouter', 'groq'];
+  guides.forEach(p => {
+    const g = document.getElementById('setup-guide-' + p);
+    if (g) g.style.display = provider === p ? '' : 'none';
+  });
 }
 
 function escHtml(str) {
@@ -511,5 +600,6 @@ window.addEventListener('load', () => {
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/framer-motion@11/dist/framer-motion.js"></script>
+<script src="../assets/js/theme.js"></script>
 </body>
 </html>

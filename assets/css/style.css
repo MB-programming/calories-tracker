@@ -669,3 +669,48 @@ tr:hover td { background: rgba(108,99,255,0.05); }
 @media (max-width:768px) {
   .comparison-strip { -webkit-overflow-scrolling: touch; }
 }
+
+/* ─── Light Mode ─── */
+body.light-mode {
+  --bg: #F5F5FB;
+  --bg-card: #FFFFFF;
+  --bg-card2: #EEEEF8;
+  --text: #1A1A2E;
+  --text-muted: #6666AA;
+  --border: #D8D8EE;
+  --shadow: 0 8px 32px rgba(108,99,255,0.10);
+}
+
+body.light-mode .navbar {
+  background: rgba(255,255,255,0.95);
+}
+
+body.light-mode .analyzing-overlay {
+  background: rgba(245,245,251,0.88);
+}
+
+body.light-mode th {
+  background: var(--bg-card2);
+}
+
+body.light-mode .auth-wrap {
+  background:
+    radial-gradient(ellipse at 60% 40%, rgba(108,99,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 80%, rgba(255,101,132,0.06) 0%, transparent 50%),
+    var(--bg);
+}
+
+/* Theme toggle button */
+#theme-toggle {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+#theme-toggle:hover { border-color: var(--primary); color: var(--primary); }

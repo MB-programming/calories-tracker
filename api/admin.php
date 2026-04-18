@@ -12,7 +12,7 @@ if ($action === 'get_settings') {
     $stmt = $pdo->query("SELECT `key`, value FROM settings");
     $rows = $stmt->fetchAll();
     $settings = [];
-    $maskKeys = ['gemini_api_key', 'openai_api_key', 'anthropic_api_key'];
+    $maskKeys = ['gemini_api_key', 'openai_api_key', 'anthropic_api_key', 'openrouter_api_key', 'groq_api_key'];
     foreach ($rows as $row) {
         if (in_array($row['key'], $maskKeys) && strlen($row['value']) > 4) {
             $settings[$row['key']] = substr($row['value'], 0, 4) . str_repeat('*', strlen($row['value']) - 4);
@@ -30,6 +30,8 @@ if ($action === 'save_settings') {
         'gemini_api_key', 'gemini_model',
         'openai_api_key', 'openai_model',
         'anthropic_api_key', 'anthropic_model',
+        'openrouter_api_key', 'openrouter_model',
+        'groq_api_key', 'groq_model',
         'app_name', 'default_daily_goal',
     ];
     $stmt = $pdo->prepare("INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?");
@@ -37,7 +39,7 @@ if ($action === 'save_settings') {
     foreach ($allowed as $key) {
         if (!isset($_POST[$key])) continue;
         $val = trim($_POST[$key]);
-        if (in_array($key, ['gemini_api_key', 'openai_api_key', 'anthropic_api_key']) && str_contains($val, '***')) continue;
+        if (in_array($key, ['gemini_api_key','openai_api_key','anthropic_api_key','openrouter_api_key','groq_api_key']) && str_contains($val, '***')) continue;
         $stmt->execute([$key, $val, $val]);
     }
 

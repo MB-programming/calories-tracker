@@ -13,6 +13,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <title>التقارير - CalTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/style.css">
 <style>
 .report-card { background: var(--bg-card2); border:1px solid var(--border); border-radius:14px; padding:1.25rem; transition: var(--transition); }
@@ -27,14 +28,14 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 </head>
 <body>
 <nav class="navbar">
-  <div class="navbar-brand"><span>🔥</span><span>Cal<span style="color:var(--secondary)">Track</span></span></div>
+  <div class="navbar-brand"><i class="bi bi-fire"></i><span>Cal<span style="color:var(--secondary)">Track</span></span></div>
   <ul class="navbar-nav">
-    <li><a href="index.php">🏠 الرئيسية</a></li>
-    <li><a href="camera.php">📸 تصوير الطعام</a></li>
-    <li><a href="history.php">📅 السجل</a></li>
-    <li><a href="reports.php" class="active">📊 التقارير</a></li>
+    <li><a href="index.php"><i class="bi bi-house-fill"></i> الرئيسية</a></li>
+    <li><a href="camera.php"><i class="bi bi-camera-fill"></i> تصوير الطعام</a></li>
+    <li><a href="history.php"><i class="bi bi-calendar3"></i> السجل</a></li>
+    <li><a href="reports.php" class="active"><i class="bi bi-bar-chart-fill"></i> التقارير</a></li>
     <?php if (isAdmin()): ?>
-    <li><a href="admin/index.php">⚙️ الإدارة</a></li>
+    <li><a href="admin/index.php"><i class="bi bi-gear-fill"></i> الإدارة</a></li>
     <?php endif; ?>
   </ul>
   <div class="navbar-user">
@@ -46,20 +47,20 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
 <div class="container" id="main-content" style="opacity:0">
   <div class="page-header">
-    <div class="page-title">📊 التقارير والتحليلات</div>
+    <div class="page-title"><i class="bi bi-bar-chart-fill"></i> التقارير والتحليلات</div>
     <div class="page-subtitle">تتبع تطورك الأسبوعي والشهري</div>
   </div>
 
   <!-- View Tabs -->
   <div class="tabs" style="max-width:360px;margin-bottom:1.5rem">
-    <button class="tab-btn active" onclick="showView('weekly')">📅 أسبوعي</button>
-    <button class="tab-btn" onclick="showView('monthly')">📆 شهري</button>
+    <button class="tab-btn active" onclick="showView('weekly')"><i class="bi bi-calendar3"></i> أسبوعي</button>
+    <button class="tab-btn" onclick="showView('monthly')"><i class="bi bi-calendar-month"></i> شهري</button>
   </div>
 
   <!-- Weekly View -->
   <div id="view-weekly">
     <div class="card" style="margin-bottom:1.5rem">
-      <div class="card-title">📅 التقرير الأسبوعي - آخر 12 أسبوع</div>
+      <div class="card-title"><i class="bi bi-calendar3"></i> التقرير الأسبوعي - آخر 12 أسبوع</div>
       <div id="weekly-loading" style="text-align:center;padding:2rem"><div class="spinner" style="margin:auto"></div></div>
       <div id="weekly-content" style="display:none">
         <div id="weekly-chart" class="chart-bar-wrap" style="height:180px;margin-bottom:1.5rem;gap:6px;align-items:flex-end"></div>
@@ -71,7 +72,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
   <!-- Monthly View -->
   <div id="view-monthly" style="display:none">
     <div class="card" style="margin-bottom:1.5rem">
-      <div class="card-title">📆 التقرير الشهري - آخر 12 شهر</div>
+      <div class="card-title"><i class="bi bi-calendar-month"></i> التقرير الشهري - آخر 12 شهر</div>
       <div id="monthly-loading" style="text-align:center;padding:2rem"><div class="spinner" style="margin:auto"></div></div>
       <div id="monthly-content" style="display:none">
         <div id="monthly-chart" class="chart-bar-wrap" style="height:180px;margin-bottom:1.5rem;gap:8px;align-items:flex-end"></div>
@@ -82,7 +83,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
   <!-- Insights Card -->
   <div class="card" id="insights-card" style="display:none">
-    <div class="card-title">💡 تحليل ذكي</div>
+    <div class="card-title"><i class="bi bi-lightbulb-fill"></i> تحليل ذكي</div>
     <div id="insights-content" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
 </div>
@@ -118,7 +119,6 @@ async function loadWeekly() {
 
   const maxAvg = Math.max(...weeklyData.map(w => parseFloat(w.avg_calories)), DAILY_GOAL);
 
-  // Chart
   const chart = document.getElementById('weekly-chart');
   chart.innerHTML = weeklyData.map(w => {
     const h    = Math.max(4, (parseFloat(w.avg_calories) / maxAvg) * 160);
@@ -131,11 +131,10 @@ async function loadWeekly() {
     </div>`;
   }).join('');
 
-  // Cards
   const cards = document.getElementById('weekly-cards');
   cards.innerHTML = [...weeklyData].reverse().map((w, i) => {
     const trend = w.trend || 'stable';
-    const trendIcon = trend === 'up' ? '▲' : trend === 'down' ? '▼' : '→';
+    const trendIcon = trend === 'up' ? '<i class="bi bi-arrow-up"></i>' : trend === 'down' ? '<i class="bi bi-arrow-down"></i>' : '<i class="bi bi-dash"></i>';
     const pct  = Math.min(100, Math.round((parseFloat(w.avg_calories) / DAILY_GOAL) * 100));
     const over = parseFloat(w.avg_calories) > DAILY_GOAL;
 
@@ -154,7 +153,7 @@ async function loadWeekly() {
         <span style="font-size:0.85rem;color:var(--text-muted)">${pct}% من الهدف</span>
         ${i < weeklyData.length - 1 && w.change !== 0 ? `
           <span class="trend-badge trend-${trend}">${trendIcon} ${Math.abs(w.change)} كالوري</span>
-        ` : '<span class="trend-badge trend-stable">→ مستقر</span>'}
+        ` : '<span class="trend-badge trend-stable"><i class="bi bi-dash"></i> مستقر</span>'}
       </div>
       <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:${pct}%;background:${over ? 'var(--danger)' : pct > 85 ? 'var(--warning)' : 'var(--success)'}"></div>
@@ -181,7 +180,6 @@ async function loadMonthly() {
 
   const maxAvg = Math.max(...monthlyData.map(m => parseFloat(m.avg_calories)), DAILY_GOAL);
 
-  // Chart
   const chart = document.getElementById('monthly-chart');
   chart.innerHTML = monthlyData.map(m => {
     const h    = Math.max(4, (parseFloat(m.avg_calories) / maxAvg) * 160);
@@ -194,11 +192,10 @@ async function loadMonthly() {
     </div>`;
   }).join('');
 
-  // Cards
   const cards = document.getElementById('monthly-cards');
   cards.innerHTML = [...monthlyData].reverse().map((m, i) => {
     const trend = m.trend || 'stable';
-    const trendIcon = trend === 'up' ? '▲' : trend === 'down' ? '▼' : '→';
+    const trendIcon = trend === 'up' ? '<i class="bi bi-arrow-up"></i>' : trend === 'down' ? '<i class="bi bi-arrow-down"></i>' : '<i class="bi bi-dash"></i>';
     const pct  = Math.min(120, Math.round((parseFloat(m.avg_calories) / DAILY_GOAL) * 100));
     const over = parseFloat(m.avg_calories) > DAILY_GOAL;
     const goalDiff = m.goal_diff > 0
@@ -236,7 +233,7 @@ async function loadMonthly() {
         <span style="font-size:0.85rem;color:var(--text-muted)">${Math.min(pct,100)}% من الهدف</span>
         ${m.change !== 0 ? `
           <span class="trend-badge trend-${trend}">${trendIcon} ${Math.abs(m.change)} مقارنة بالشهر السابق</span>
-        ` : '<span class="trend-badge trend-stable">→ بداية البيانات</span>'}
+        ` : '<span class="trend-badge trend-stable"><i class="bi bi-dash"></i> بداية البيانات</span>'}
       </div>
       <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:${Math.min(pct,100)}%;background:${over ? 'var(--danger)' : pct > 85 ? 'var(--warning)' : 'var(--success)'}"></div>
@@ -259,7 +256,7 @@ function generateInsights(data, type) {
 
   if (Math.abs(diff) > 50) {
     insights.push({
-      icon: diff > 0 ? '⚠️' : '🎉',
+      icon: diff > 0 ? '<i class="bi bi-exclamation-triangle-fill"></i>' : '<i class="bi bi-stars"></i>',
       color: diff > 0 ? 'var(--warning)' : 'var(--success)',
       text: diff > 0
         ? `سعراتك ارتفعت بمقدار <strong>${Math.round(diff)}</strong> كالوري مقارنة ${type === 'weekly' ? 'بالأسبوع' : 'بالشهر'} السابق`
@@ -269,24 +266,24 @@ function generateInsights(data, type) {
 
   if (avgCal > DAILY_GOAL * 1.1) {
     insights.push({
-      icon: '🔴', color: 'var(--danger)',
+      icon: '<i class="bi bi-x-circle-fill" style="color:var(--danger)"></i>', color: 'var(--danger)',
       text: `متوسطك اليومي <strong>${Math.round(avgCal)}</strong> يتجاوز هدفك بنسبة ${Math.round((avgCal/DAILY_GOAL - 1)*100)}% - حاول تقليل حجم الوجبات`
     });
   } else if (avgCal < DAILY_GOAL * 0.7) {
     insights.push({
-      icon: '🟡', color: 'var(--warning)',
+      icon: '<i class="bi bi-exclamation-circle-fill" style="color:var(--warning)"></i>', color: 'var(--warning)',
       text: `سعراتك منخفضة جداً (${Math.round(avgCal)} كالوري). تأكد من تسجيل جميع وجباتك أو استشر خبير تغذية`
     });
   } else {
     insights.push({
-      icon: '✅', color: 'var(--success)',
+      icon: '<i class="bi bi-check-circle-fill" style="color:var(--success)"></i>', color: 'var(--success)',
       text: `متوسطك اليومي <strong>${Math.round(avgCal)}</strong> قريب من هدفك - استمر على هذا النهج!`
     });
   }
 
   if (latest.days_logged < 5 && type === 'weekly') {
     insights.push({
-      icon: '📝', color: 'var(--primary)',
+      icon: '<i class="bi bi-pencil-square" style="color:var(--primary)"></i>', color: 'var(--primary)',
       text: 'حاول تسجيل وجباتك يومياً للحصول على تقارير أدق'
     });
   }

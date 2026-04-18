@@ -13,6 +13,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <title>لوحة التحكم - CalTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -20,18 +21,18 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <!-- Navbar -->
 <nav class="navbar">
   <div class="navbar-brand">
-    <span>🔥</span>
+    <i class="bi bi-fire"></i>
     <span>Cal<span style="color:var(--secondary)">Track</span></span>
   </div>
   <ul class="navbar-nav">
-    <li><a href="index.php" class="active">🏠 الرئيسية</a></li>
-    <li><a href="camera.php">📸 تصوير</a></li>
-    <li><a href="workout.php">🏋️ التمارين</a></li>
-    <li><a href="history.php">📅 السجل</a></li>
-    <li><a href="reports.php">📊 التقارير</a></li>
-    <li><a href="profile.php">👤 ملفي</a></li>
+    <li><a href="index.php" class="active"><i class="bi bi-house-fill"></i> الرئيسية</a></li>
+    <li><a href="camera.php"><i class="bi bi-camera-fill"></i> تصوير</a></li>
+    <li><a href="workout.php"><i class="bi bi-lightning-fill"></i> التمارين</a></li>
+    <li><a href="history.php"><i class="bi bi-calendar3"></i> السجل</a></li>
+    <li><a href="reports.php"><i class="bi bi-bar-chart-fill"></i> التقارير</a></li>
+    <li><a href="profile.php"><i class="bi bi-person-fill"></i> ملفي</a></li>
     <?php if (isAdmin()): ?>
-    <li><a href="admin/index.php">⚙️ الإدارة</a></li>
+    <li><a href="admin/index.php"><i class="bi bi-gear-fill"></i> الإدارة</a></li>
     <?php endif; ?>
   </ul>
   <div class="navbar-user">
@@ -45,34 +46,34 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
   <!-- Header -->
   <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
     <div>
-      <div class="page-title">مرحباً، <?= htmlspecialchars($userName) ?> 👋</div>
+      <div class="page-title">مرحباً، <?= htmlspecialchars($userName) ?></div>
       <div class="page-subtitle" id="date-label">جاري التحميل...</div>
     </div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" onclick="openAddModal()">➕ إضافة وجبة</button>
-      <a href="camera.php" class="btn btn-secondary">📸 تصوير</a>
+      <button class="btn btn-primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> إضافة وجبة</button>
+      <a href="camera.php" class="btn btn-secondary"><i class="bi bi-camera-fill"></i> تصوير</a>
     </div>
   </div>
 
   <!-- Stats Row -->
   <div class="stats-grid" id="stats-grid">
     <div class="stat-card" style="--accent:var(--primary)">
-      <div class="stat-icon" style="background:rgba(108,99,255,0.15)">🔥</div>
+      <div class="stat-icon" style="background:rgba(108,99,255,0.15)"><i class="bi bi-fire"></i></div>
       <div class="stat-value" id="stat-consumed">0</div>
       <div class="stat-label">سعرات مُستهلكة</div>
     </div>
     <div class="stat-card" style="--accent:var(--success)">
-      <div class="stat-icon" style="background:rgba(67,217,143,0.15)">🎯</div>
+      <div class="stat-icon" style="background:rgba(67,217,143,0.15)"><i class="bi bi-bullseye"></i></div>
       <div class="stat-value" id="stat-remaining">0</div>
       <div class="stat-label">متبقي اليوم</div>
     </div>
     <div class="stat-card" style="--accent:var(--warning)">
-      <div class="stat-icon" style="background:rgba(255,179,71,0.15)">🥩</div>
+      <div class="stat-icon" style="background:rgba(255,179,71,0.15)"><i class="bi bi-lightning-fill"></i></div>
       <div class="stat-value" id="stat-protein">0g</div>
       <div class="stat-label">بروتين</div>
     </div>
     <div class="stat-card" style="--accent:var(--secondary)">
-      <div class="stat-icon" style="background:rgba(255,101,132,0.15)">🍞</div>
+      <div class="stat-icon" style="background:rgba(255,101,132,0.15)"><i class="bi bi-layers-fill"></i></div>
       <div class="stat-value" id="stat-carbs">0g</div>
       <div class="stat-label">كربوهيدرات</div>
     </div>
@@ -81,7 +82,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
   <div class="grid-2" style="margin-bottom:1.5rem">
     <!-- Progress Ring -->
     <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:1rem">
-      <div class="card-title">🎯 تقدم اليوم</div>
+      <div class="card-title"><i class="bi bi-bullseye"></i> تقدم اليوم</div>
       <div style="position:relative;display:inline-flex">
         <svg class="progress-ring-svg" width="160" height="160" viewBox="0 0 160 160">
           <defs>
@@ -106,7 +107,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
     <!-- 7-day chart -->
     <div class="card">
-      <div class="card-title">📈 السعرات - آخر 7 أيام</div>
+      <div class="card-title"><i class="bi bi-graph-up-arrow"></i> السعرات - آخر 7 أيام</div>
       <div class="chart-bar-wrap" id="week-chart"></div>
       <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:0.8rem;color:var(--text-muted)">
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--primary);display:inline-block"></span>السعرات</span>
@@ -118,7 +119,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
   <!-- Today's Meals -->
   <div class="card">
     <div class="card-title" style="justify-content:space-between">
-      <span>🍽️ وجبات اليوم</span>
+      <span><i class="bi bi-egg-fried"></i> وجبات اليوم</span>
       <input type="date" id="date-picker" class="form-control" style="width:auto;padding:6px 12px;font-size:0.85rem"
         value="<?= date('Y-m-d') ?>" onchange="loadDay(this.value)">
     </div>
@@ -134,8 +135,8 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <div class="modal-overlay" id="add-modal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">➕ إضافة وجبة يدوياً</div>
-      <button class="modal-close" onclick="closeAddModal()">✕</button>
+      <div class="modal-title"><i class="bi bi-plus-lg"></i> إضافة وجبة يدوياً</div>
+      <button class="modal-close" onclick="closeAddModal()"><i class="bi bi-x-lg"></i></button>
     </div>
     <div id="modal-alert"></div>
     <form id="add-form">
@@ -145,16 +146,16 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">السعرات 🔥</label>
+          <label class="form-label">السعرات <i class="bi bi-fire"></i></label>
           <input type="number" name="calories" class="form-control" placeholder="350" min="1" required>
         </div>
         <div class="form-group">
           <label class="form-label">نوع الوجبة</label>
           <select name="meal_type" class="form-control">
-            <option value="breakfast">فطار 🌅</option>
-            <option value="lunch">غداء ☀️</option>
-            <option value="dinner">عشاء 🌙</option>
-            <option value="snack" selected>سناك 🍎</option>
+            <option value="breakfast">فطار</option>
+            <option value="lunch">غداء</option>
+            <option value="dinner">عشاء</option>
+            <option value="snack" selected>سناك</option>
           </select>
         </div>
       </div>
@@ -177,7 +178,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
         <input type="date" name="log_date" class="form-control" id="modal-date">
       </div>
       <div style="display:flex;gap:10px">
-        <button type="submit" class="btn btn-primary" style="flex:1">💾 حفظ</button>
+        <button type="submit" class="btn btn-primary" style="flex:1"><i class="bi bi-floppy-fill"></i> حفظ</button>
         <button type="button" class="btn btn-secondary" onclick="closeAddModal()">إلغاء</button>
       </div>
     </form>
@@ -188,7 +189,6 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 const DAILY_GOAL = <?= $dailyGoal ?>;
 let currentDate = new Date().toISOString().split('T')[0];
 
-// Date label
 const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const now = new Date();
@@ -204,47 +204,50 @@ async function loadDay(date) {
 
   const { logs, totals } = data;
 
-  // Update stats
   const remaining = Math.max(0, DAILY_GOAL - totals.calories);
   animateNumber('stat-consumed', totals.calories);
   animateNumber('stat-remaining', remaining);
   document.getElementById('stat-protein').textContent = totals.protein.toFixed(1) + 'g';
   document.getElementById('stat-carbs').textContent   = totals.carbs.toFixed(1) + 'g';
 
-  // Progress ring
   const pct = Math.min(1, totals.calories / DAILY_GOAL);
   const circ = 427;
   document.getElementById('ring-fill').style.strokeDashoffset = circ - (circ * pct);
   document.getElementById('ring-pct').textContent = Math.round(pct * 100) + '%';
 
-  // Meals list
   const list = document.getElementById('meals-list');
   if (logs.length === 0) {
     list.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)">
-      <div style="font-size:2.5rem;margin-bottom:8px">🍽️</div>
+      <div style="font-size:2.5rem;margin-bottom:8px"><i class="bi bi-egg-fried"></i></div>
       <div>لم تسجل وجبات بعد اليوم</div>
       <div style="font-size:0.85rem;margin-top:4px">ابدأ بإضافة وجبتك الأولى!</div>
     </div>`;
     return;
   }
 
-  const mealIcons = { breakfast:'🌅', lunch:'☀️', dinner:'🌙', snack:'🍎' };
+  const mealIcons = {
+    breakfast:'<i class="bi bi-sunrise"></i>',
+    lunch:'<i class="bi bi-sun-fill"></i>',
+    dinner:'<i class="bi bi-moon-fill"></i>',
+    snack:'<i class="bi bi-apple"></i>'
+  };
   list.innerHTML = logs.map(log => `
     <div class="food-item" id="food-${log.id}" style="opacity:0;transform:translateX(20px)">
-      <div class="food-item-icon">${mealIcons[log.meal_type] || '🍽️'}</div>
+      <div class="food-item-icon">${mealIcons[log.meal_type] || '<i class="bi bi-egg-fried"></i>'}</div>
       <div class="food-item-info">
         <div class="food-item-name">${escHtml(log.food_name)}</div>
         <div class="food-item-meta">
-          🥩 ${log.protein}g &nbsp; 🍞 ${log.carbs}g &nbsp; 🧈 ${log.fat}g
+          <i class="bi bi-lightning-fill"></i> ${log.protein}g &nbsp;
+          <i class="bi bi-layers-fill"></i> ${log.carbs}g &nbsp;
+          <i class="bi bi-droplet-fill"></i> ${log.fat}g
           &nbsp;|&nbsp; ${log.meal_type === 'breakfast' ? 'فطار' : log.meal_type === 'lunch' ? 'غداء' : log.meal_type === 'dinner' ? 'عشاء' : 'سناك'}
         </div>
       </div>
       <div class="food-item-cal">${log.calories}</div>
-      <button class="food-item-del" onclick="deleteLog(${log.id})" title="حذف">🗑️</button>
+      <button class="food-item-del" onclick="deleteLog(${log.id})" title="حذف"><i class="bi bi-trash3-fill"></i></button>
     </div>
   `).join('');
 
-  // Animate items in
   document.querySelectorAll('.food-item').forEach((el, i) => {
     setTimeout(() => {
       el.style.transition = 'opacity 0.4s, transform 0.4s';
@@ -263,7 +266,6 @@ async function loadWeekChart() {
   const maxCal = Math.max(...data.data.map(d => d.total_calories), DAILY_GOAL);
   const dayNames = ['أح','إث','ث','أر','خ','ج','س'];
 
-  // Build 7-day map
   const map = {};
   data.data.forEach(d => { map[d.log_date] = d.total_calories; });
 
@@ -317,7 +319,7 @@ document.getElementById('add-form').addEventListener('submit', async e => {
     loadWeekChart();
   } else {
     document.getElementById('modal-alert').innerHTML =
-      `<div class="alert alert-error">❌ ${data.message}</div>`;
+      `<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> ${data.message}</div>`;
   }
 });
 
@@ -346,7 +348,6 @@ function escHtml(str) {
   );
 }
 
-// Framer Motion page entrance
 window.addEventListener('load', () => {
   const main = document.getElementById('main-content');
   main.style.opacity = '1';

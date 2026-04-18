@@ -5,33 +5,7 @@ require_once '../includes/auth.php';
 header('Content-Type: application/json');
 requireLogin();
 
-$apiKey      = getSetting($pdo, 'gemini_api_key', '');
-$primaryModel = getSetting($pdo, 'gemini_model', 'gemini-1.5-flash');
-
-if (empty($apiKey)) {
-    echo json_encode(['success' => false, 'message' => 'لم يتم إعداد مفتاح API. يرجى التواصل مع المسؤول.']);
-    exit;
-}
-
-// 10 free Gemini fallback models tried in order when the primary fails
-$fallbackModels = [
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-pro',
-    'gemini-1.5-flash-8b',
-    'gemini-2.5-flash-preview-04-17',
-    'gemini-2.0-flash-thinking-exp-01-21',
-    'gemini-2.0-pro-exp-02-05',
-    'gemini-exp-1206',
-    'gemini-1.5-flash-latest',
-    'gemini-2.0-flash-exp',
-];
-
-// Build model list: primary first, then fallbacks (excluding primary if listed)
-$models = array_merge(
-    [$primaryModel],
-    array_values(array_filter($fallbackModels, fn($m) => $m !== $primaryModel))
-);
+$provider = getSetting($pdo, 'ai_provider', 'gemini');
 
 // ── Image input ──────────────────────────────────────────────────────────────
 $imageData = null;
@@ -69,6 +43,156 @@ $prompt = <<<PROMPT
 }
 إذا لم تتمكن من التعرف على الطعام، أعد: {"error": "لا يمكن التعرف على الطعام في الصورة"}
 PROMPT;
+
+// ── OpenAI GPT-4 Vision ──────────────────────────────────────────────────────
+if ($provider === 'openai') {
+    $apiKey = getSetting($pdo, 'openai_api_key', '');
+    $model  = getSetting($pdo, 'openai_model', 'gpt-4o');
+
+    if (empty($apiKey)) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم إعداد مفتاح OpenAI API. يرجى التواصل مع المسؤول.']);
+        exit;
+    }
+
+    $payload = [
+        'model'       => $model,
+        'messages'    => [[
+            'role'    => 'user',
+            'content' => [
+                ['type' => 'text', 'text' => $prompt],
+                ['type' => 'image_url', 'image_url' => ['url' => "data:{$mimeType};base64,{$imageData}", 'detail' => 'low']],
+            ],
+        ]],
+        'max_tokens'  => 500,
+        'temperature' => 0.1,
+    ];
+
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey],
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ]);
+
+    $response  = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في الاتصال: ' . $curlError]);
+        exit;
+    }
+
+    $data = json_decode($response, true);
+
+    if ($httpCode !== 200 || empty($data['choices'][0]['message']['content'])) {
+        echo json_encode(['success' => false, 'message' => $data['error']['message'] ?? "فشل النموذج {$model}"]);
+        exit;
+    }
+
+    $text   = preg_replace('/```json\s*|\s*```/', '', trim($data['choices'][0]['message']['content']));
+    $result = json_decode($text, true);
+
+    if (!$result || isset($result['error'])) {
+        echo json_encode(['success' => false, 'message' => $result['error'] ?? 'فشل تحليل الصورة']);
+        exit;
+    }
+
+    echo json_encode(['success' => true, 'data' => $result, 'model_used' => $model]);
+    exit;
+}
+
+// ── Anthropic Claude Vision ──────────────────────────────────────────────────
+if ($provider === 'anthropic') {
+    $apiKey = getSetting($pdo, 'anthropic_api_key', '');
+    $model  = getSetting($pdo, 'anthropic_model', 'claude-sonnet-4-6');
+
+    if (empty($apiKey)) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم إعداد مفتاح Anthropic API. يرجى التواصل مع المسؤول.']);
+        exit;
+    }
+
+    $payload = [
+        'model'      => $model,
+        'max_tokens' => 500,
+        'messages'   => [[
+            'role'    => 'user',
+            'content' => [
+                ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => $mimeType, 'data' => $imageData]],
+                ['type' => 'text', 'text' => $prompt],
+            ],
+        ]],
+    ];
+
+    $ch = curl_init('https://api.anthropic.com/v1/messages');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'x-api-key: ' . $apiKey,
+            'anthropic-version: 2023-06-01',
+        ],
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ]);
+
+    $response  = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في الاتصال: ' . $curlError]);
+        exit;
+    }
+
+    $data = json_decode($response, true);
+
+    if ($httpCode !== 200 || empty($data['content'][0]['text'])) {
+        echo json_encode(['success' => false, 'message' => $data['error']['message'] ?? "فشل النموذج {$model}"]);
+        exit;
+    }
+
+    $text   = preg_replace('/```json\s*|\s*```/', '', trim($data['content'][0]['text']));
+    $result = json_decode($text, true);
+
+    if (!$result || isset($result['error'])) {
+        echo json_encode(['success' => false, 'message' => $result['error'] ?? 'فشل تحليل الصورة']);
+        exit;
+    }
+
+    echo json_encode(['success' => true, 'data' => $result, 'model_used' => $model]);
+    exit;
+}
+
+// ── Google Gemini (default) ──────────────────────────────────────────────────
+$apiKey       = getSetting($pdo, 'gemini_api_key', '');
+$primaryModel = getSetting($pdo, 'gemini_model', 'gemini-1.5-flash');
+
+if (empty($apiKey)) {
+    echo json_encode(['success' => false, 'message' => 'لم يتم إعداد مفتاح API. يرجى التواصل مع المسؤول.']);
+    exit;
+}
+
+$fallbackModels = [
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-2.5-flash-preview-04-17',
+    'gemini-1.5-pro',
+    'gemini-1.5-flash-8b',
+    'gemini-1.5-flash-latest',
+];
+
+$models = array_merge(
+    [$primaryModel],
+    array_values(array_filter($fallbackModels, fn($m) => $m !== $primaryModel))
+);
 
 $payload = [
     'contents' => [[
@@ -115,8 +239,7 @@ foreach ($models as $model) {
         continue;
     }
 
-    $text   = $data['candidates'][0]['content']['parts'][0]['text'];
-    $text   = preg_replace('/```json\s*|\s*```/', '', trim($text));
+    $text   = preg_replace('/```json\s*|\s*```/', '', trim($data['candidates'][0]['content']['parts'][0]['text']));
     $result = json_decode($text, true);
 
     if (!$result || isset($result['error'])) {
@@ -124,7 +247,6 @@ foreach ($models as $model) {
         continue;
     }
 
-    // Success — return result with the model that worked
     echo json_encode(['success' => true, 'data' => $result, 'model_used' => $model]);
     exit;
 }

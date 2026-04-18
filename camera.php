@@ -13,20 +13,21 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <title>تصوير الطعام - CalTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
 <!-- Navbar -->
 <nav class="navbar">
-  <div class="navbar-brand"><span>🔥</span><span>Cal<span style="color:var(--secondary)">Track</span></span></div>
+  <div class="navbar-brand"><i class="bi bi-fire"></i><span>Cal<span style="color:var(--secondary)">Track</span></span></div>
   <ul class="navbar-nav">
-    <li><a href="index.php">🏠 الرئيسية</a></li>
-    <li><a href="camera.php" class="active">📸 تصوير الطعام</a></li>
-    <li><a href="history.php">📅 السجل</a></li>
-    <li><a href="reports.php">📊 التقارير</a></li>
+    <li><a href="index.php"><i class="bi bi-house-fill"></i> الرئيسية</a></li>
+    <li><a href="camera.php" class="active"><i class="bi bi-camera-fill"></i> تصوير الطعام</a></li>
+    <li><a href="history.php"><i class="bi bi-calendar3"></i> السجل</a></li>
+    <li><a href="reports.php"><i class="bi bi-bar-chart-fill"></i> التقارير</a></li>
     <?php if (isAdmin()): ?>
-    <li><a href="admin/index.php">⚙️ الإدارة</a></li>
+    <li><a href="admin/index.php"><i class="bi bi-gear-fill"></i> الإدارة</a></li>
     <?php endif; ?>
   </ul>
   <div class="navbar-user">
@@ -38,19 +39,19 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
 <div class="container" id="main-content" style="opacity:0">
   <div class="page-header">
-    <div class="page-title">📸 تحليل الطعام بالذكاء الاصطناعي</div>
+    <div class="page-title"><i class="bi bi-camera-fill"></i> تحليل الطعام بالذكاء الاصطناعي</div>
     <div class="page-subtitle">صوّر طعامك وسيحلله الذكاء الاصطناعي تلقائياً</div>
   </div>
 
   <div class="grid-2" style="align-items:start">
     <!-- Camera / Upload -->
     <div class="card">
-      <div class="card-title">📷 التقاط صورة</div>
+      <div class="card-title"><i class="bi bi-camera"></i> التقاط صورة</div>
 
       <!-- Mode Tabs -->
       <div class="tabs" style="margin-bottom:1rem">
-        <button class="tab-btn active" onclick="setMode('camera')">📷 الكاميرا</button>
-        <button class="tab-btn" onclick="setMode('upload')">📁 رفع صورة</button>
+        <button class="tab-btn active" onclick="setMode('camera')"><i class="bi bi-camera"></i> الكاميرا</button>
+        <button class="tab-btn" onclick="setMode('upload')"><i class="bi bi-folder2-open"></i> رفع صورة</button>
       </div>
 
       <!-- Camera Mode -->
@@ -60,23 +61,23 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
           <canvas id="camera-canvas" style="display:none"></canvas>
           <div class="camera-overlay">
             <button class="capture-btn" onclick="capturePhoto()" id="capture-btn" title="التقاط">
-              📸
+              <i class="bi bi-camera-fill"></i>
             </button>
           </div>
           <div class="scan-line" id="scan-line"></div>
           <div class="analyzing-overlay" id="analyzing-overlay" style="display:none">
             <div class="spinner" style="width:48px;height:48px;border-width:4px"></div>
-            <div class="analyzing-text pulse">🤖 جاري تحليل الصورة...</div>
+            <div class="analyzing-text pulse"><i class="bi bi-robot"></i> جاري تحليل الصورة...</div>
             <div style="color:var(--text-muted);font-size:0.85rem">يتعرف الذكاء الاصطناعي على طعامك</div>
           </div>
         </div>
 
         <div style="margin-top:1rem;display:flex;gap:10px">
           <button class="btn btn-secondary" id="switch-cam-btn" onclick="switchCamera()" style="display:none">
-            🔄 تبديل الكاميرا
+            <i class="bi bi-arrow-repeat"></i> تبديل الكاميرا
           </button>
           <button class="btn btn-danger btn-sm" onclick="stopCamera()" id="stop-cam-btn" style="display:none">
-            ⏹️ إيقاف
+            <i class="bi bi-stop-fill"></i> إيقاف
           </button>
         </div>
       </div>
@@ -84,7 +85,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
       <!-- Upload Mode -->
       <div id="upload-mode" style="display:none">
         <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-          <div style="font-size:3rem;margin-bottom:8px">📁</div>
+          <div style="font-size:3rem;margin-bottom:8px"><i class="bi bi-folder2-open"></i></div>
           <div style="font-weight:600">اسحب الصورة هنا أو اضغط للاختيار</div>
           <div style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">JPG, PNG, WEBP - حتى 10MB</div>
         </div>
@@ -93,9 +94,9 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
           <img id="preview-img" class="img-preview" alt="معاينة">
           <div style="margin-top:1rem;display:flex;gap:10px">
             <button class="btn btn-primary" onclick="analyzeUploadedImage()" id="analyze-btn">
-              🤖 تحليل الصورة
+              <i class="bi bi-robot"></i> تحليل الصورة
             </button>
-            <button class="btn btn-secondary" onclick="resetUpload()">🔄 اختر أخرى</button>
+            <button class="btn btn-secondary" onclick="resetUpload()"><i class="bi bi-arrow-repeat"></i> اختر أخرى</button>
           </div>
         </div>
       </div>
@@ -104,7 +105,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
     <!-- Analysis Result -->
     <div id="result-panel">
       <div class="card" style="text-align:center;padding:3rem 1.5rem">
-        <div style="font-size:4rem;margin-bottom:1rem">🍽️</div>
+        <div style="font-size:4rem;margin-bottom:1rem"><i class="bi bi-egg-fried"></i></div>
         <div style="font-size:1.1rem;font-weight:600;color:var(--text-muted)">في انتظار تصوير الطعام...</div>
         <div style="font-size:0.9rem;color:var(--text-muted);margin-top:8px">
           صوّر طعامك أو ارفع صورة وسيحدد الذكاء الاصطناعي السعرات الحرارية
@@ -115,7 +116,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
   <!-- Recent Camera Logs -->
   <div class="card" style="margin-top:1.5rem">
-    <div class="card-title">🕐 آخر الوجبات المحللة</div>
+    <div class="card-title"><i class="bi bi-clock-fill"></i> آخر الوجبات المحللة</div>
     <div id="recent-logs" style="display:flex;flex-direction:column;gap:8px">
       <div style="text-align:center;padding:1.5rem;color:var(--text-muted)">لا توجد وجبات محللة بعد</div>
     </div>
@@ -126,8 +127,8 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">✅ تأكيد إضافة الوجبة</div>
-      <button class="modal-close" onclick="closeConfirmModal()">✕</button>
+      <div class="modal-title"><i class="bi bi-check-circle-fill"></i> تأكيد إضافة الوجبة</div>
+      <button class="modal-close" onclick="closeConfirmModal()"><i class="bi bi-x-lg"></i></button>
     </div>
     <div id="confirm-content"></div>
     <div id="confirm-alert"></div>
@@ -142,10 +143,10 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
         <div class="form-group">
           <label class="form-label">نوع الوجبة</label>
           <select name="meal_type" class="form-control">
-            <option value="breakfast">فطار 🌅</option>
-            <option value="lunch">غداء ☀️</option>
-            <option value="dinner">عشاء 🌙</option>
-            <option value="snack" selected>سناك 🍎</option>
+            <option value="breakfast">فطار</option>
+            <option value="lunch">غداء</option>
+            <option value="dinner">عشاء</option>
+            <option value="snack" selected>سناك</option>
           </select>
         </div>
         <div class="form-group">
@@ -154,7 +155,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
         </div>
       </div>
       <div style="display:flex;gap:10px">
-        <button type="submit" class="btn btn-success" style="flex:1">✅ إضافة للسجل</button>
+        <button type="submit" class="btn btn-success" style="flex:1"><i class="bi bi-check-circle-fill"></i> إضافة للسجل</button>
         <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">إلغاء</button>
       </div>
     </form>
@@ -182,7 +183,7 @@ async function startCamera() {
     const cams = devices.filter(d => d.kind === 'videoinput');
     if (cams.length > 1) document.getElementById('switch-cam-btn').style.display = '';
   } catch(err) {
-    showResultPanel(`<div class="alert alert-error">❌ لا يمكن الوصول للكاميرا: ${err.message}</div>`, false);
+    showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> لا يمكن الوصول للكاميرا: ${err.message}</div>`, false);
   }
 }
 
@@ -239,9 +240,11 @@ function resetUpload() {
 async function analyzeUploadedImage() {
   if (!uploadedImageBase64) return;
   const btn = document.getElementById('analyze-btn');
-  btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0"></div> جاري التحليل...';
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0"></div> جاري التحليل...';
   await analyzeImage(uploadedImageBase64);
-  btn.disabled = false; btn.innerHTML = '🤖 تحليل الصورة';
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-robot"></i> تحليل الصورة';
 }
 
 async function analyzeImage(base64) {
@@ -257,18 +260,24 @@ async function analyzeImage(base64) {
     document.getElementById('analyzing-overlay').style.display = 'none';
 
     if (!data.success) {
-      showResultPanel(`<div class="alert alert-error">❌ ${data.message}</div>`, false);
+      showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> ${data.message}</div>`, false);
       return;
     }
 
     showAnalysisResult(data.data, base64);
   } catch(err) {
     document.getElementById('analyzing-overlay').style.display = 'none';
-    showResultPanel(`<div class="alert alert-error">❌ خطأ في الاتصال بالخادم</div>`, false);
+    showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> خطأ في الاتصال بالخادم</div>`, false);
   }
 }
 
 function showAnalysisResult(r, imageBase64) {
+  const confIcon = r.confidence === 'high'
+    ? '<i class="bi bi-check-circle-fill"></i> دقة عالية'
+    : r.confidence === 'medium'
+      ? '<i class="bi bi-exclamation-circle-fill"></i> دقة متوسطة'
+      : '<i class="bi bi-exclamation-triangle-fill"></i> تقدير تقريبي';
+
   const html = `
     <div class="card" style="border-color:var(--success)">
       <div style="display:flex;gap:1rem;margin-bottom:1.5rem;align-items:center">
@@ -276,33 +285,31 @@ function showAnalysisResult(r, imageBase64) {
         <div>
           <div style="font-size:1.2rem;font-weight:700">${escHtml(r.food_name)}</div>
           <div style="color:var(--text-muted);font-size:0.9rem;margin-top:4px">${escHtml(r.description || '')}</div>
-          <span class="badge badge-success" style="margin-top:6px">
-            ${r.confidence === 'high' ? '✅ دقة عالية' : r.confidence === 'medium' ? '🔸 دقة متوسطة' : '⚠️ تقدير تقريبي'}
-          </span>
+          <span class="badge badge-success" style="margin-top:6px">${confIcon}</span>
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem">
         <div class="macro-pill" style="border-color:var(--primary)">
           <div class="macro-value" style="color:var(--primary)">${r.calories}</div>
-          <div class="macro-label">🔥 كالوري</div>
+          <div class="macro-label"><i class="bi bi-fire"></i> كالوري</div>
         </div>
         <div class="macro-pill">
           <div class="macro-value" style="color:var(--warning)">${r.protein}g</div>
-          <div class="macro-label">🥩 بروتين</div>
+          <div class="macro-label"><i class="bi bi-lightning-fill"></i> بروتين</div>
         </div>
         <div class="macro-pill">
           <div class="macro-value" style="color:var(--secondary)">${r.carbs}g</div>
-          <div class="macro-label">🍞 كارب</div>
+          <div class="macro-label"><i class="bi bi-layers-fill"></i> كارب</div>
         </div>
         <div class="macro-pill">
           <div class="macro-value" style="color:var(--success)">${r.fat}g</div>
-          <div class="macro-label">🧈 دهون</div>
+          <div class="macro-label"><i class="bi bi-droplet-fill"></i> دهون</div>
         </div>
       </div>
 
       <button class="btn btn-primary btn-full" onclick="openConfirmModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">
-        ➕ إضافة للسجل
+        <i class="bi bi-plus-lg"></i> إضافة للسجل
       </button>
     </div>
   `;
@@ -324,7 +331,7 @@ function openConfirmModal(r) {
   document.getElementById('cf-date').value    = new Date().toISOString().split('T')[0];
   document.getElementById('confirm-content').innerHTML = `
     <div class="alert alert-info" style="margin-bottom:1rem">
-      🍽️ <strong>${escHtml(r.food_name)}</strong> — ${r.calories} كالوري
+      <i class="bi bi-egg-fried"></i> <strong>${escHtml(r.food_name)}</strong> — ${r.calories} كالوري
     </div>
   `;
   document.getElementById('confirm-alert').innerHTML = '';
@@ -342,16 +349,16 @@ document.getElementById('confirm-form').addEventListener('submit', async e => {
   const data = await res.json();
   if (data.success) {
     closeConfirmModal();
-    showResultPanel(`<div class="alert alert-success">✅ تمت إضافة الوجبة بنجاح!</div>
+    showResultPanel(`<div class="alert alert-success"><i class="bi bi-check-circle-fill"></i> تمت إضافة الوجبة بنجاح!</div>
       <div class="card" style="margin-top:1rem;text-align:center">
-        <div style="font-size:3rem;margin-bottom:8px">🎉</div>
+        <div style="font-size:3rem;margin-bottom:8px"><i class="bi bi-stars"></i></div>
         <div style="font-weight:600">تمت الإضافة!</div>
         <a href="index.php" class="btn btn-primary" style="margin-top:1rem">عرض اليوم</a>
       </div>`);
     loadRecentLogs();
   } else {
     document.getElementById('confirm-alert').innerHTML =
-      `<div class="alert alert-error">❌ ${data.message}</div>`;
+      `<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> ${data.message}</div>`;
   }
 });
 
@@ -360,14 +367,23 @@ async function loadRecentLogs() {
   const data = await res.json();
   if (!data.success || data.logs.length === 0) return;
 
-  const icons = { breakfast:'🌅', lunch:'☀️', dinner:'🌙', snack:'🍎' };
+  const icons = {
+    breakfast:'<i class="bi bi-sunrise"></i>',
+    lunch:'<i class="bi bi-sun-fill"></i>',
+    dinner:'<i class="bi bi-moon-fill"></i>',
+    snack:'<i class="bi bi-apple"></i>'
+  };
   const recent = document.getElementById('recent-logs');
   recent.innerHTML = data.logs.slice(0,5).map(log => `
     <div class="food-item">
-      <div class="food-item-icon">${icons[log.meal_type]||'🍽️'}</div>
+      <div class="food-item-icon">${icons[log.meal_type]||'<i class="bi bi-egg-fried"></i>'}</div>
       <div class="food-item-info">
         <div class="food-item-name">${escHtml(log.food_name)}</div>
-        <div class="food-item-meta">🥩 ${log.protein}g &nbsp; 🍞 ${log.carbs}g &nbsp; 🧈 ${log.fat}g</div>
+        <div class="food-item-meta">
+          <i class="bi bi-lightning-fill"></i> ${log.protein}g &nbsp;
+          <i class="bi bi-layers-fill"></i> ${log.carbs}g &nbsp;
+          <i class="bi bi-droplet-fill"></i> ${log.fat}g
+        </div>
       </div>
       <div class="food-item-cal">${log.calories}</div>
     </div>

@@ -13,18 +13,19 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <title>السجل - CalTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <nav class="navbar">
-  <div class="navbar-brand"><span>🔥</span><span>Cal<span style="color:var(--secondary)">Track</span></span></div>
+  <div class="navbar-brand"><i class="bi bi-fire"></i><span>Cal<span style="color:var(--secondary)">Track</span></span></div>
   <ul class="navbar-nav">
-    <li><a href="index.php">🏠 الرئيسية</a></li>
-    <li><a href="camera.php">📸 تصوير الطعام</a></li>
-    <li><a href="history.php" class="active">📅 السجل</a></li>
-    <li><a href="reports.php">📊 التقارير</a></li>
+    <li><a href="index.php"><i class="bi bi-house-fill"></i> الرئيسية</a></li>
+    <li><a href="camera.php"><i class="bi bi-camera-fill"></i> تصوير الطعام</a></li>
+    <li><a href="history.php" class="active"><i class="bi bi-calendar3"></i> السجل</a></li>
+    <li><a href="reports.php"><i class="bi bi-bar-chart-fill"></i> التقارير</a></li>
     <?php if (isAdmin()): ?>
-    <li><a href="admin/index.php">⚙️ الإدارة</a></li>
+    <li><a href="admin/index.php"><i class="bi bi-gear-fill"></i> الإدارة</a></li>
     <?php endif; ?>
   </ul>
   <div class="navbar-user">
@@ -37,7 +38,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <div class="container" id="main-content" style="opacity:0">
   <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
     <div>
-      <div class="page-title">📅 سجل السعرات الحرارية</div>
+      <div class="page-title"><i class="bi bi-calendar3"></i> سجل السعرات الحرارية</div>
       <div class="page-subtitle">تتبع وجباتك عبر الأيام</div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
@@ -53,22 +54,22 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
   <!-- Summary Stats -->
   <div class="stats-grid" id="summary-stats" style="margin-bottom:1.5rem">
     <div class="stat-card" style="--accent:var(--primary)">
-      <div class="stat-icon">📊</div>
+      <div class="stat-icon"><i class="bi bi-bar-chart-fill"></i></div>
       <div class="stat-value" id="avg-cal">-</div>
       <div class="stat-label">متوسط يومي (كالوري)</div>
     </div>
     <div class="stat-card" style="--accent:var(--success)">
-      <div class="stat-icon">✅</div>
+      <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
       <div class="stat-value" id="days-goal">-</div>
       <div class="stat-label">أيام تحقق الهدف</div>
     </div>
     <div class="stat-card" style="--accent:var(--warning)">
-      <div class="stat-icon">📅</div>
+      <div class="stat-icon"><i class="bi bi-calendar3"></i></div>
       <div class="stat-value" id="days-logged">-</div>
       <div class="stat-label">أيام مسجلة</div>
     </div>
     <div class="stat-card" style="--accent:var(--secondary)">
-      <div class="stat-icon">🏆</div>
+      <div class="stat-icon"><i class="bi bi-trophy-fill"></i></div>
       <div class="stat-value" id="max-day">-</div>
       <div class="stat-label">أعلى يوم (كالوري)</div>
     </div>
@@ -76,7 +77,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
   <!-- Chart -->
   <div class="card" style="margin-bottom:1.5rem">
-    <div class="card-title">📈 مخطط السعرات</div>
+    <div class="card-title"><i class="bi bi-graph-up-arrow"></i> مخطط السعرات</div>
     <div style="position:relative">
       <div class="chart-bar-wrap" id="history-chart" style="height:160px;overflow-x:auto;gap:3px;padding-bottom:4px;align-items:flex-end"></div>
       <div style="text-align:center;margin-top:8px;font-size:0.8rem;color:var(--text-muted)">
@@ -87,7 +88,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
   <!-- Daily History Table -->
   <div class="card">
-    <div class="card-title">📋 تفاصيل يومية</div>
+    <div class="card-title"><i class="bi bi-clipboard-fill"></i> تفاصيل يومية</div>
     <div class="table-wrap">
       <table id="history-table">
         <thead>
@@ -114,7 +115,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
   <div class="modal" style="max-width:560px">
     <div class="modal-header">
       <div class="modal-title" id="day-modal-title">تفاصيل اليوم</div>
-      <button class="modal-close" onclick="closeDayModal()">✕</button>
+      <button class="modal-close" onclick="closeDayModal()"><i class="bi bi-x-lg"></i></button>
     </div>
     <div id="day-modal-content"></div>
   </div>
@@ -131,7 +132,6 @@ async function loadHistory() {
 
   const rows = data.data;
 
-  // Summary
   if (rows.length > 0) {
     const avg = Math.round(rows.reduce((s,r) => s + parseInt(r.total_calories), 0) / rows.length);
     const daysGoal = rows.filter(r => parseInt(r.total_calories) <= DAILY_GOAL).length;
@@ -142,7 +142,6 @@ async function loadHistory() {
     document.getElementById('max-day').textContent  = maxCal.toLocaleString();
   }
 
-  // Chart
   const chart = document.getElementById('history-chart');
   const maxCal = Math.max(...rows.map(r => parseInt(r.total_calories)), DAILY_GOAL);
   chart.innerHTML = rows.map(r => {
@@ -156,7 +155,6 @@ async function loadHistory() {
     </div>`;
   }).join('');
 
-  // Table
   const tbody = document.getElementById('history-body');
   if (rows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">لا توجد بيانات في هذه الفترة</td></tr>`;
@@ -174,8 +172,8 @@ async function loadHistory() {
       <td>${parseFloat(r.total_fat).toFixed(1)}g</td>
       <td>
         ${over
-          ? `<span class="badge badge-danger">▲ ${diff.toLocaleString()} فوق الهدف</span>`
-          : `<span class="badge badge-success">✓ ضمن الهدف</span>`}
+          ? `<span class="badge badge-danger"><i class="bi bi-arrow-up"></i> ${diff.toLocaleString()} فوق الهدف</span>`
+          : `<span class="badge badge-success"><i class="bi bi-check"></i> ضمن الهدف</span>`}
       </td>
       <td><button class="btn btn-sm btn-secondary" onclick="loadDayDetail('${r.log_date}')">عرض</button></td>
     </tr>`;
@@ -183,7 +181,7 @@ async function loadHistory() {
 }
 
 async function loadDayDetail(date) {
-  document.getElementById('day-modal-title').textContent = '📅 ' + formatDate(date);
+  document.getElementById('day-modal-title').innerHTML = '<i class="bi bi-calendar3"></i> ' + formatDate(date);
   document.getElementById('day-modal-content').innerHTML = '<div class="spinner" style="margin:2rem auto"></div>';
   document.getElementById('day-modal').classList.add('open');
 
@@ -192,7 +190,12 @@ async function loadDayDetail(date) {
   if (!data.success) return;
 
   const { logs, totals } = data;
-  const icons = { breakfast:'🌅', lunch:'☀️', dinner:'🌙', snack:'🍎' };
+  const icons = {
+    breakfast:'<i class="bi bi-sunrise"></i>',
+    lunch:'<i class="bi bi-sun-fill"></i>',
+    dinner:'<i class="bi bi-moon-fill"></i>',
+    snack:'<i class="bi bi-apple"></i>'
+  };
 
   document.getElementById('day-modal-content').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1.5rem">
@@ -204,10 +207,14 @@ async function loadDayDetail(date) {
     <div style="display:flex;flex-direction:column;gap:8px">
       ${logs.map(log => `
         <div class="food-item">
-          <div class="food-item-icon">${icons[log.meal_type]||'🍽️'}</div>
+          <div class="food-item-icon">${icons[log.meal_type]||'<i class="bi bi-egg-fried"></i>'}</div>
           <div class="food-item-info">
             <div class="food-item-name">${escHtml(log.food_name)}</div>
-            <div class="food-item-meta">🥩 ${log.protein}g &nbsp; 🍞 ${log.carbs}g &nbsp; 🧈 ${log.fat}g</div>
+            <div class="food-item-meta">
+              <i class="bi bi-lightning-fill"></i> ${log.protein}g &nbsp;
+              <i class="bi bi-layers-fill"></i> ${log.carbs}g &nbsp;
+              <i class="bi bi-droplet-fill"></i> ${log.fat}g
+            </div>
           </div>
           <div class="food-item-cal">${log.calories}</div>
         </div>
@@ -246,7 +253,6 @@ window.addEventListener('load', () => {
   loadHistory();
 });
 
-// Add CSS for fadeIn
 const style = document.createElement('style');
 style.textContent = '@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }';
 document.head.appendChild(style);

@@ -325,5 +325,6 @@ document.head.appendChild(style);
 </script>
 <script src="https://cdn.jsdelivr.net/npm/framer-motion@11/dist/framer-motion.js"></script>
 <script src="assets/js/theme.js"></script>
+<?php include 'includes/mobile_nav.php'; ?>
 </body>
 </html>

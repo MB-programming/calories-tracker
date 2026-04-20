@@ -477,5 +477,6 @@ window.addEventListener('load', async () => {
 });
 </script>
 <script src="assets/js/theme.js"></script>
+<?php include 'includes/mobile_nav.php'; ?>
 </body>
 </html>

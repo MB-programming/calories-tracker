@@ -580,5 +580,6 @@ async function logout() {
 }
 </script>
 <script src="assets/js/theme.js"></script>
+<?php include 'includes/mobile_nav.php'; ?>
 </body>
 </html>

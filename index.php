@@ -14,7 +14,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=3">
 </head>
 <body>
 
@@ -187,9 +187,17 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
 <script>
 const DAILY_GOAL = <?= $dailyGoal ?>;
-let currentDate = new Date().toISOString().split('T')[0];
 
-const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+/* Use local date (not UTC) to avoid timezone mismatch */
+function getLocalDate() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+let currentDate = getLocalDate();
+
+const days   = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const now = new Date();
 document.getElementById('date-label').textContent =
@@ -198,88 +206,107 @@ document.getElementById('date-label').textContent =
 async function loadDay(date) {
   currentDate = date;
   document.getElementById('date-picker').value = date;
-  const res  = await fetch(`api/food.php?action=today&date=${date}`);
-  const data = await res.json();
-  if (!data.success) return;
+
+  /* Always show spinner while loading */
+  const list = document.getElementById('meals-list');
+  list.innerHTML = '<div style="text-align:center;padding:2rem"><div class="spinner"></div></div>';
+
+  let data;
+  try {
+    const res = await fetch(`api/food.php?action=today&date=${date}`);
+    data = await res.json();
+  } catch (err) {
+    list.innerHTML = `<div class="alert alert-error"><i class="bi bi-wifi-off"></i> تعذّر الاتصال بالخادم</div>`;
+    return;
+  }
+
+  if (!data.success) {
+    list.innerHTML = `<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> ${data.message || 'خطأ في تحميل البيانات'}</div>`;
+    return;
+  }
 
   const { logs, totals } = data;
 
+  /* Update stats */
   const remaining = Math.max(0, DAILY_GOAL - totals.calories);
   animateNumber('stat-consumed', totals.calories);
   animateNumber('stat-remaining', remaining);
-  document.getElementById('stat-protein').textContent = totals.protein.toFixed(1) + 'g';
-  document.getElementById('stat-carbs').textContent   = totals.carbs.toFixed(1) + 'g';
+  document.getElementById('stat-protein').textContent = (+totals.protein).toFixed(1) + 'g';
+  document.getElementById('stat-carbs').textContent   = (+totals.carbs).toFixed(1)   + 'g';
 
-  const pct = Math.min(1, totals.calories / DAILY_GOAL);
+  /* Update ring */
+  const pct  = Math.min(1, totals.calories / DAILY_GOAL);
   const circ = 427;
   document.getElementById('ring-fill').style.strokeDashoffset = circ - (circ * pct);
   document.getElementById('ring-pct').textContent = Math.round(pct * 100) + '%';
 
-  const list = document.getElementById('meals-list');
+  /* Render meals */
   if (logs.length === 0) {
-    list.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)">
-      <div style="font-size:2.5rem;margin-bottom:8px"><i class="bi bi-egg-fried"></i></div>
-      <div>لم تسجل وجبات بعد اليوم</div>
-      <div style="font-size:0.85rem;margin-top:4px">ابدأ بإضافة وجبتك الأولى!</div>
-    </div>`;
+    list.innerHTML = `
+      <div style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted)">
+        <div style="font-size:2.5rem;margin-bottom:8px"><i class="bi bi-egg-fried"></i></div>
+        <div style="font-weight:600">لا توجد وجبات مسجّلة</div>
+        <div style="font-size:.85rem;margin-top:4px">ابدأ بإضافة وجبتك الأولى!</div>
+      </div>`;
     return;
   }
 
   const mealIcons = {
-    breakfast:'<i class="bi bi-sunrise"></i>',
-    lunch:'<i class="bi bi-sun-fill"></i>',
-    dinner:'<i class="bi bi-moon-fill"></i>',
-    snack:'<i class="bi bi-apple"></i>'
+    breakfast: '<i class="bi bi-sunrise-fill"></i>',
+    lunch:     '<i class="bi bi-sun-fill"></i>',
+    dinner:    '<i class="bi bi-moon-fill"></i>',
+    snack:     '<i class="bi bi-apple"></i>'
   };
+  const mealLabels = { breakfast:'فطار', lunch:'غداء', dinner:'عشاء', snack:'سناك' };
+
   list.innerHTML = logs.map(log => `
-    <div class="food-item" id="food-${log.id}" style="opacity:0;transform:translateX(20px)">
+    <div class="food-item" id="food-${log.id}">
       <div class="food-item-icon">${mealIcons[log.meal_type] || '<i class="bi bi-egg-fried"></i>'}</div>
       <div class="food-item-info">
         <div class="food-item-name">${escHtml(log.food_name)}</div>
         <div class="food-item-meta">
-          <i class="bi bi-lightning-fill"></i> ${log.protein}g &nbsp;
-          <i class="bi bi-layers-fill"></i> ${log.carbs}g &nbsp;
-          <i class="bi bi-droplet-fill"></i> ${log.fat}g
-          &nbsp;|&nbsp; ${log.meal_type === 'breakfast' ? 'فطار' : log.meal_type === 'lunch' ? 'غداء' : log.meal_type === 'dinner' ? 'عشاء' : 'سناك'}
+          <i class="bi bi-lightning-fill"></i> ${(+log.protein).toFixed(1)}g &nbsp;
+          <i class="bi bi-layers-fill"></i> ${(+log.carbs).toFixed(1)}g &nbsp;
+          <i class="bi bi-droplet-fill"></i> ${(+log.fat).toFixed(1)}g
+          &nbsp;·&nbsp; ${mealLabels[log.meal_type] || log.meal_type}
         </div>
       </div>
-      <div class="food-item-cal">${log.calories}</div>
-      <button class="food-item-del" onclick="deleteLog(${log.id})" title="حذف"><i class="bi bi-trash3-fill"></i></button>
+      <div class="food-item-cal">${log.calories} <small style="font-weight:400;font-size:.75rem">كال</small></div>
+      <button class="food-item-del" onclick="deleteLog(${log.id})" title="حذف">
+        <i class="bi bi-trash3-fill"></i>
+      </button>
     </div>
   `).join('');
-
-  document.querySelectorAll('.food-item').forEach((el, i) => {
-    setTimeout(() => {
-      el.style.transition = 'opacity 0.4s, transform 0.4s';
-      el.style.opacity = '1';
-      el.style.transform = 'translateX(0)';
-    }, i * 60);
-  });
 }
 
 async function loadWeekChart() {
-  const res  = await fetch('api/food.php?action=history&days=7');
-  const data = await res.json();
+  let data;
+  try {
+    const res = await fetch('api/food.php?action=history&days=7');
+    data = await res.json();
+  } catch { return; }
   if (!data.success) return;
 
-  const chart = document.getElementById('week-chart');
-  const maxCal = Math.max(...data.data.map(d => d.total_calories), DAILY_GOAL);
+  const chart    = document.getElementById('week-chart');
   const dayNames = ['أح','إث','ث','أر','خ','ج','س'];
-
-  const map = {};
-  data.data.forEach(d => { map[d.log_date] = d.total_calories; });
+  const map      = {};
+  data.data.forEach(d => { map[d.log_date] = +d.total_calories; });
 
   const bars = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const key = d.toISOString().split('T')[0];
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2,'0') + '-' +
+      String(d.getDate()).padStart(2,'0');
     bars.push({ label: dayNames[d.getDay()], cal: map[key] || 0 });
   }
 
+  const maxCal = Math.max(...bars.map(b => b.cal), DAILY_GOAL, 1);
   chart.innerHTML = bars.map(b => {
     const h = Math.max(4, (b.cal / maxCal) * 100);
     return `<div class="chart-bar-col">
-      <div style="font-size:0.7rem;color:var(--primary);font-weight:700">${b.cal||''}</div>
+      <div style="font-size:.68rem;color:var(--primary);font-weight:700;min-height:14px">${b.cal || ''}</div>
       <div class="chart-bar" style="height:${h}%" title="${b.cal} كالوري"></div>
       <div class="chart-bar-label">${b.label}</div>
     </div>`;
@@ -289,10 +316,11 @@ async function loadWeekChart() {
 async function deleteLog(id) {
   if (!confirm('حذف هذا الطعام؟')) return;
   const fd = new FormData();
-  fd.append('action','delete'); fd.append('id', id);
-  await fetch('api/food.php', {method:'POST', body:fd});
+  fd.append('action','delete');
+  fd.append('id', id);
   const el = document.getElementById('food-' + id);
-  if (el) { el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(),300); }
+  if (el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 250); }
+  await fetch('api/food.php', { method:'POST', body:fd });
   loadDay(currentDate);
 }
 
@@ -301,7 +329,6 @@ function openAddModal() {
   document.getElementById('modal-alert').innerHTML = '';
   document.getElementById('add-modal').classList.add('open');
 }
-
 function closeAddModal() {
   document.getElementById('add-modal').classList.remove('open');
   document.getElementById('add-form').reset();
@@ -309,10 +336,20 @@ function closeAddModal() {
 
 document.getElementById('add-form').addEventListener('submit', async e => {
   e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]');
+  btn.disabled = true;
   const fd = new FormData(e.target);
   fd.append('action','add');
-  const res  = await fetch('api/food.php', {method:'POST', body:fd});
-  const data = await res.json();
+  let data;
+  try {
+    const res = await fetch('api/food.php', { method:'POST', body:fd });
+    data = await res.json();
+  } catch {
+    document.getElementById('modal-alert').innerHTML =
+      '<div class="alert alert-error"><i class="bi bi-wifi-off"></i> خطأ في الاتصال</div>';
+    btn.disabled = false;
+    return;
+  }
   if (data.success) {
     closeAddModal();
     loadDay(currentDate);
@@ -320,47 +357,36 @@ document.getElementById('add-form').addEventListener('submit', async e => {
   } else {
     document.getElementById('modal-alert').innerHTML =
       `<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> ${data.message}</div>`;
+    btn.disabled = false;
   }
 });
 
 async function logout() {
-  const fd = new FormData(); fd.append('action','logout');
-  await fetch('api/auth.php', {method:'POST', body:fd});
+  const fd = new FormData();
+  fd.append('action','logout');
+  await fetch('api/auth.php', { method:'POST', body:fd });
   location.href = 'login.php';
 }
 
 function animateNumber(id, target) {
-  const el = document.getElementById(id);
+  const el    = document.getElementById(id);
   const start = parseInt(el.textContent) || 0;
-  const duration = 600;
-  const startTime = performance.now();
-  const update = (now) => {
-    const p = Math.min(1, (now - startTime) / duration);
+  const t0    = performance.now();
+  (function tick(now) {
+    const p = Math.min(1, (now - t0) / 600);
     el.textContent = Math.round(start + (target - start) * p);
-    if (p < 1) requestAnimationFrame(update);
-  };
-  requestAnimationFrame(update);
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
 }
 
-function escHtml(str) {
-  return str.replace(/[&<>"']/g, m =>
-    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])
-  );
+function escHtml(s) {
+  return s.replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
 
-window.addEventListener('load', () => {
-  const main = document.getElementById('main-content');
-  main.style.opacity = '1';
-  if (window.Motion) {
-    window.Motion.animate('#main-content',
-      { opacity: [0,1], y: [20,0] },
-      { duration: 0.5, easing: [0.4,0,0.2,1] }
-    );
-    window.Motion.animate('#stats-grid .stat-card',
-      { opacity: [0,1], y: [20,0] },
-      { duration: 0.4, delay: window.Motion.stagger(0.1), easing: [0.4,0,0.2,1] }
-    );
-  }
+/* Load data immediately — don't wait for CDN scripts */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('main-content').style.opacity = '1';
   loadDay(currentDate);
   loadWeekChart();
 });

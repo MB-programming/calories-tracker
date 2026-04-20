@@ -1,16 +1,22 @@
 <?php
+require_once 'includes/db.php';
 require_once 'includes/auth.php';
+require_once 'includes/app_settings.php';
 if (isLoggedIn()) {
     header('Location: /index.php');
     exit;
 }
+$app = getAppSettings($pdo);
+$APP_NAME = htmlspecialchars($app['name']);
+$APP_ICON = htmlspecialchars($app['logo_icon']);
+$APP_COLOR = htmlspecialchars($app['logo_color']);
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>تسجيل الدخول - CalTrack</title>
+<title>تسجيل الدخول - <?= $APP_NAME ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -20,8 +26,8 @@ if (isLoggedIn()) {
 <div class="auth-wrap">
   <div class="auth-card" id="auth-card">
     <div class="auth-logo">
-      <span class="icon"><i class="bi bi-fire"></i></span>
-      <h1>CalTrack</h1>
+      <span class="icon"><i class="bi bi-<?= $APP_ICON ?>"<?= $APP_COLOR ? ' style="color:'.$APP_COLOR.'"' : '' ?>></i></span>
+      <h1><?= $APP_NAME ?></h1>
       <p>تتبع سعراتك الحرارية بذكاء</p>
     </div>
 

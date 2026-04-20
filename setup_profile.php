@@ -1,6 +1,7 @@
 <?php
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
+require_once 'includes/app_settings.php';
 requireLogin();
 
 // If profile already complete, go to dashboard
@@ -12,13 +13,17 @@ if ($user['profile_complete']) {
     exit;
 }
 $userName = $user['name'];
+$app = getAppSettings($pdo);
+$APP_NAME = htmlspecialchars($app['name']);
+$APP_ICON = htmlspecialchars($app['logo_icon']);
+$APP_COLOR = htmlspecialchars($app['logo_color']);
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>إعداد الملف الشخصي - CalTrack</title>
+<title>إعداد الملف الشخصي - <?= $APP_NAME ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css?v=4">

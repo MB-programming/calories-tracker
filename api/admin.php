@@ -12,7 +12,7 @@ if ($action === 'get_settings') {
     $stmt = $pdo->query("SELECT `key`, value FROM settings");
     $rows = $stmt->fetchAll();
     $settings = [];
-    $maskKeys = ['gemini_api_key', 'openai_api_key', 'anthropic_api_key', 'openrouter_api_key', 'groq_api_key'];
+    $maskKeys = ['gemini_api_key','openai_api_key','anthropic_api_key','openrouter_api_key','groq_api_key'];
     foreach ($rows as $row) {
         if (in_array($row['key'], $maskKeys) && strlen($row['value']) > 4) {
             $settings[$row['key']] = substr($row['value'], 0, 4) . str_repeat('*', strlen($row['value']) - 4);
@@ -32,7 +32,9 @@ if ($action === 'save_settings') {
         'anthropic_api_key', 'anthropic_model',
         'openrouter_api_key', 'openrouter_model',
         'groq_api_key', 'groq_model',
-        'app_name', 'default_daily_goal',
+        'consensus_mode', 'consensus_providers',
+        'fallback_enabled', 'fallback_providers',
+        'app_name', 'app_logo_icon', 'app_logo_color', 'default_daily_goal',
     ];
     $stmt = $pdo->prepare("INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?");
 

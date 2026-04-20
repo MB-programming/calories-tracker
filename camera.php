@@ -1,16 +1,21 @@
 <?php
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
+require_once 'includes/app_settings.php';
 requireLogin();
 $userName  = $_SESSION['user_name'];
 $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
+$app = getAppSettings($pdo);
+$APP_NAME = htmlspecialchars($app['name']);
+$APP_ICON = htmlspecialchars($app['logo_icon']);
+$APP_COLOR = htmlspecialchars($app['logo_color']);
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>تصوير الطعام - CalTrack</title>
+<title>تصوير الطعام - <?= $APP_NAME ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -20,7 +25,7 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 
 <!-- Navbar -->
 <nav class="navbar">
-  <div class="navbar-brand"><i class="bi bi-fire"></i><span>Cal<span style="color:var(--secondary)">Track</span></span></div>
+  <div class="navbar-brand"><i class="bi bi-<?= $APP_ICON ?>"<?= $APP_COLOR ? ' style="color:'.$APP_COLOR.'"' : '' ?>></i><span><?= $APP_NAME ?></span></div>
   <ul class="navbar-nav">
     <li><a href="index.php"><i class="bi bi-house-fill"></i> الرئيسية</a></li>
     <li><a href="camera.php" class="active"><i class="bi bi-camera-fill"></i> تصوير الطعام</a></li>
@@ -248,7 +253,7 @@ async function analyzeText() {
     if (!data.success) {
       showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> ${data.message}</div>`, false);
     } else {
-      showAnalysisResult(data.data, null);
+      showAnalysisResult(data.data, null, data.consensus_info || null);
     }
   } catch(err) {
     showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> خطأ في الاتصال بالخادم</div>`, false);
@@ -305,23 +310,46 @@ async function analyzeImage(base64) {
       return;
     }
 
-    showAnalysisResult(data.data, base64);
+    showAnalysisResult(data.data, base64, data.consensus_info || null);
   } catch(err) {
     document.getElementById('analyzing-overlay').style.display = 'none';
     showResultPanel(`<div class="alert alert-error"><i class="bi bi-x-circle-fill"></i> خطأ في الاتصال بالخادم</div>`, false);
   }
 }
 
-function showAnalysisResult(r, imageBase64) {
+function showAnalysisResult(r, imageBase64, consensusInfo) {
   const confIcon = r.confidence === 'high'
-    ? '<i class="bi bi-check-circle-fill"></i> دقة عالية'
+    ? '<i class="bi bi-check-circle-fill" style="color:var(--success)"></i> دقة عالية'
     : r.confidence === 'medium'
-      ? '<i class="bi bi-exclamation-circle-fill"></i> دقة متوسطة'
-      : '<i class="bi bi-exclamation-triangle-fill"></i> تقدير تقريبي';
+      ? '<i class="bi bi-exclamation-circle-fill" style="color:var(--warning)"></i> دقة متوسطة'
+      : '<i class="bi bi-exclamation-triangle-fill" style="color:var(--danger)"></i> تقدير تقريبي';
+
+  let consensusBadge = '';
+  if (consensusInfo) {
+    if (consensusInfo.mode === 'consensus' && consensusInfo.providers_used >= 2) {
+      const spreadColor = consensusInfo.cal_spread_pct < 15 ? 'var(--success)' : consensusInfo.cal_spread_pct < 35 ? 'var(--warning)' : 'var(--danger)';
+      const providerList = (consensusInfo.providers || []).map(p =>
+        `<span style="font-size:0.75rem;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:2px 8px">${p.provider} <strong style="color:var(--primary)">${p.calories}</strong></span>`
+      ).join(' ');
+      consensusBadge = `
+        <div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.25);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:0.83rem">
+          <div style="font-weight:700;color:var(--primary);margin-bottom:6px">
+            <i class="bi bi-diagram-3-fill"></i> نتيجة Consensus — ${consensusInfo.providers_used} نماذج
+            <span style="font-weight:400;color:${spreadColor};margin-right:8px">(فرق ${consensusInfo.cal_spread_pct}%)</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${providerList}</div>
+        </div>`;
+    } else if (consensusInfo.mode === 'single') {
+      consensusBadge = `
+        <div style="background:rgba(255,179,71,0.08);border:1px solid rgba(255,179,71,0.2);border-radius:10px;padding:8px 12px;margin-bottom:1rem;font-size:0.82rem;color:var(--warning)">
+          <i class="bi bi-exclamation-triangle-fill"></i> نجح مزود واحد فقط من ${consensusInfo.providers_total} — الثقة منخفضة
+        </div>`;
+    }
+  }
 
   const html = `
     <div class="card" style="border-color:var(--success)">
-      <div style="display:flex;gap:1rem;margin-bottom:1.5rem;align-items:center">
+      <div style="display:flex;gap:1rem;margin-bottom:1rem;align-items:center">
         ${imageBase64 ? `<img src="${imageBase64}" style="width:80px;height:80px;object-fit:cover;border-radius:12px;flex-shrink:0">` : ''}
         <div>
           <div style="font-size:1.2rem;font-weight:700">${escHtml(r.food_name)}</div>
@@ -329,6 +357,8 @@ function showAnalysisResult(r, imageBase64) {
           <span class="badge badge-success" style="margin-top:6px">${confIcon}</span>
         </div>
       </div>
+
+      ${consensusBadge}
 
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem">
         <div class="macro-pill" style="border-color:var(--primary)">

@@ -1,15 +1,20 @@
 <?php
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
+require_once 'includes/app_settings.php';
 requireLogin();
 $userName = $_SESSION['user_name'];
+$app = getAppSettings($pdo);
+$APP_NAME = htmlspecialchars($app['name']);
+$APP_ICON = htmlspecialchars($app['logo_icon']);
+$APP_COLOR = htmlspecialchars($app['logo_color']);
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ملفي الشخصي - CalTrack</title>
+<title>ملفي الشخصي - <?= $APP_NAME ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -72,8 +77,8 @@ $userName = $_SESSION['user_name'];
 
 <nav class="navbar">
   <div class="navbar-brand">
-    <i class="bi bi-fire"></i>
-    <span>Cal<span style="color:var(--secondary)">Track</span></span>
+    <i class="bi bi-<?= $APP_ICON ?>"<?= $APP_COLOR ? ' style="color:'.$APP_COLOR.'"' : '' ?>></i>
+    <span><?= $APP_NAME ?></span>
   </div>
   <ul class="navbar-nav">
     <li><a href="index.php"><i class="bi bi-house-fill"></i> الرئيسية</a></li>

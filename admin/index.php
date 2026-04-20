@@ -32,7 +32,7 @@ $userName = $_SESSION['user_name'];
 </head>
 <body>
 <nav class="navbar">
-  <div class="navbar-brand"><i class="bi bi-fire"></i><span>Cal<span style="color:var(--secondary)">Track</span></span> <span style="font-size:0.75rem;background:var(--primary);color:#fff;padding:2px 8px;border-radius:20px;margin-right:6px">Admin</span></div>
+  <div class="navbar-brand"><i class="bi bi-fire"></i><span>Admin Panel</span></div>
   <ul class="navbar-nav">
     <li><a href="../index.php"><i class="bi bi-house-fill"></i> العودة للموقع</a></li>
   </ul>
@@ -52,6 +52,7 @@ $userName = $_SESSION['user_name'];
     <ul class="sidebar-nav" style="list-style:none">
       <li><div class="admin-nav-link active" onclick="showSection('dashboard')"><i class="bi bi-bar-chart-fill"></i> لوحة التحكم</div></li>
       <li><div class="admin-nav-link" onclick="showSection('settings')"><i class="bi bi-gear-fill"></i> إعدادات الذكاء الاصطناعي</div></li>
+      <li><div class="admin-nav-link" onclick="showSection('multi-api')"><i class="bi bi-diagram-3-fill"></i> تعدد النماذج والاحتياطي</div></li>
       <li><div class="admin-nav-link" onclick="showSection('users')"><i class="bi bi-people-fill"></i> إدارة المستخدمين</div></li>
       <li><div class="admin-nav-link" onclick="showSection('app-settings')"><i class="bi bi-tools"></i> إعدادات التطبيق</div></li>
     </ul>
@@ -324,6 +325,139 @@ $userName = $_SESSION['user_name'];
       </div>
     </section>
 
+    <!-- Multi-API Section -->
+    <section class="section" id="section-multi-api">
+      <div class="page-header">
+        <div class="page-title"><i class="bi bi-diagram-3-fill"></i> تعدد النماذج والاحتياطي</div>
+        <div class="page-subtitle">اضبط وضع التحقق المتعدد وترتيب المزودين الاحتياطيين</div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div id="multi-api-alert"></div>
+        <form id="multi-api-form">
+
+          <!-- Consensus Mode -->
+          <div style="margin-bottom:1.5rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+              <div>
+                <div style="font-weight:700;font-size:1rem"><i class="bi bi-diagram-3-fill" style="color:var(--primary)"></i> وضع التحقق المتعدد (Consensus)</div>
+                <div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">
+                  يرسل الصورة لعدة نماذج في نفس الوقت ويحسب متوسط النتائج — دقة أعلى وثقة أكبر
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="consensus-toggle" name="consensus_mode" value="1"
+                  style="width:18px;height:18px;accent-color:var(--primary)" onchange="toggleConsensusUI(this.checked)">
+                <span id="consensus-label" style="font-weight:700;color:var(--text-muted)">معطّل</span>
+              </label>
+            </div>
+
+            <div id="consensus-providers-wrap" style="display:none;background:var(--bg-card2);border-radius:12px;padding:1rem;border:1px solid var(--border)">
+              <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.75rem;color:var(--text-muted)">اختر النماذج للتحقق المتعدد (2 على الأقل):</div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.75rem" id="consensus-checkboxes">
+                <?php foreach([
+                  ['gemini',     'Google Gemini',    'google',          '#4285F4'],
+                  ['openrouter', 'OpenRouter',        'box-fill',        'var(--primary)'],
+                  ['groq',       'Groq Llama',        'lightning-fill',  'var(--warning)'],
+                  ['openai',     'OpenAI GPT-4o',     'cpu-fill',        'var(--success)'],
+                  ['anthropic',  'Anthropic Claude',  'braces-asterisk', 'var(--secondary)'],
+                ] as [$val,$label,$icon,$color]): ?>
+                <label style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;transition:0.2s" class="cp-label" data-val="<?=$val?>">
+                  <input type="checkbox" name="cp_<?=$val?>" value="<?=$val?>"
+                    style="width:16px;height:16px;accent-color:var(--primary)">
+                  <i class="bi bi-<?=$icon?>" style="color:<?=$color?>"></i>
+                  <span style="font-size:0.88rem;font-weight:600"><?=$label?></span>
+                </label>
+                <?php endforeach; ?>
+              </div>
+              <input type="hidden" id="consensus-providers-input" name="consensus_providers" value="[]">
+              <div style="margin-top:0.75rem;font-size:0.82rem;color:var(--text-muted)">
+                <i class="bi bi-info-circle-fill"></i>
+                يعمل الوضع فقط مع المزودين الذين تم إعداد مفاتيح API الخاصة بهم.
+              </div>
+            </div>
+          </div>
+
+          <hr style="border-color:var(--border);margin:1.5rem 0">
+
+          <!-- Fallback Chain -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+              <div>
+                <div style="font-weight:700;font-size:1rem"><i class="bi bi-arrow-repeat" style="color:var(--success)"></i> الاحتياطي التلقائي (Fallback)</div>
+                <div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">
+                  إذا فشل المزود الرئيسي أو تجاوز الحد، يتم التحويل تلقائياً للمزود التالي
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="fallback-toggle" name="fallback_enabled" value="1"
+                  style="width:18px;height:18px;accent-color:var(--success)" onchange="toggleFallbackUI(this.checked)">
+                <span id="fallback-label" style="font-weight:700;color:var(--text-muted)">معطّل</span>
+              </label>
+            </div>
+
+            <div id="fallback-order-wrap" style="display:none;background:var(--bg-card2);border-radius:12px;padding:1rem;border:1px solid var(--border)">
+              <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.75rem;color:var(--text-muted)">ترتيب المزودين الاحتياطيين (يُجرَّب من الأول):</div>
+              <div id="fallback-list" style="display:flex;flex-direction:column;gap:6px">
+                <?php foreach([
+                  ['gemini',     'Google Gemini',    'google',          '#4285F4'],
+                  ['openrouter', 'OpenRouter',        'box-fill',        'var(--primary)'],
+                  ['groq',       'Groq Llama',        'lightning-fill',  'var(--warning)'],
+                  ['openai',     'OpenAI GPT-4o',     'cpu-fill',        'var(--success)'],
+                  ['anthropic',  'Anthropic Claude',  'braces-asterisk', 'var(--secondary)'],
+                ] as $idx => [$val,$label,$icon,$color]): ?>
+                <label class="fb-item" data-val="<?=$val?>" style="display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;padding:9px 14px;cursor:pointer;transition:0.2s">
+                  <span style="font-size:0.78rem;color:var(--text-muted);width:20px;text-align:center;font-weight:700"><?=$idx+1?></span>
+                  <input type="checkbox" name="fb_<?=$val?>" value="<?=$val?>"
+                    style="width:16px;height:16px;accent-color:var(--success)">
+                  <i class="bi bi-<?=$icon?>" style="color:<?=$color?>"></i>
+                  <span style="font-size:0.88rem;font-weight:600;flex:1"><?=$label?></span>
+                  <i class="bi bi-grip-vertical" style="color:var(--border)"></i>
+                </label>
+                <?php endforeach; ?>
+              </div>
+              <input type="hidden" id="fallback-providers-input" name="fallback_providers" value="[]">
+              <div style="margin-top:0.75rem;font-size:0.82rem;color:var(--text-muted)">
+                <i class="bi bi-info-circle-fill"></i>
+                المزود الرئيسي (المحدد في إعدادات الذكاء الاصطناعي) يُجرَّب دائماً أولاً.
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:1.5rem">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-floppy-fill"></i> حفظ الإعدادات</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Info card -->
+      <div class="card">
+        <div class="card-title"><i class="bi bi-lightbulb-fill"></i> كيف يعمل؟</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:0.88rem;color:var(--text-muted);line-height:1.7">
+          <div>
+            <div style="font-weight:700;color:var(--primary);margin-bottom:6px"><i class="bi bi-diagram-3-fill"></i> وضع Consensus</div>
+            <ul style="padding-right:1.2rem;display:flex;flex-direction:column;gap:4px">
+              <li>يرسل الصورة لكل النماذج المختارة في نفس الوقت (parallel)</li>
+              <li>يحسب متوسط السعرات والبروتين والكارب والدهون</li>
+              <li>إذا اتفقت النماذج (&lt;15% فرق) → ثقة عالية</li>
+              <li>إذا اختلفت → يُظهر تحذير وثقة متوسطة أو منخفضة</li>
+              <li>الأبطأ قليلاً لكن الأدق بكثير</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-weight:700;color:var(--success);margin-bottom:6px"><i class="bi bi-arrow-repeat"></i> وضع Fallback</div>
+            <ul style="padding-right:1.2rem;display:flex;flex-direction:column;gap:4px">
+              <li>يجرّب المزود الرئيسي أولاً</li>
+              <li>إذا فشل (خطأ 429، rate limit، مشكلة شبكة)...</li>
+              <li>ينتقل تلقائياً للمزود الاحتياطي التالي</li>
+              <li>يكمل حتى ينجح أحد المزودين</li>
+              <li>موصى به دائماً حتى مع وضع Consensus</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Users Section -->
     <section class="section" id="section-users">
       <div class="page-header">
@@ -365,14 +499,69 @@ $userName = $_SESSION['user_name'];
       <div class="card">
         <div id="app-settings-alert"></div>
         <form id="app-settings-form">
+
+          <!-- Branding -->
+          <div style="font-weight:700;font-size:0.95rem;color:var(--primary);margin-bottom:1rem;padding-bottom:6px;border-bottom:1px solid var(--border)">
+            <i class="bi bi-palette-fill"></i> هوية التطبيق (Branding)
+          </div>
+
           <div class="form-group">
             <label class="form-label">اسم التطبيق</label>
             <input type="text" name="app_name" id="app-name" class="form-control" placeholder="CalTrack">
           </div>
+
+          <div class="form-row" style="align-items:flex-end">
+            <div class="form-group">
+              <label class="form-label">أيقونة الشعار (Bootstrap Icons)</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" name="app_logo_icon" id="app-logo-icon" class="form-control"
+                  placeholder="fire" oninput="previewLogo()" style="flex:1">
+                <div id="logo-preview" style="width:44px;height:44px;border-radius:10px;background:rgba(108,99,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">
+                  <i class="bi bi-fire" id="logo-preview-icon"></i>
+                </div>
+              </div>
+              <div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">
+                أمثلة: fire · heart-pulse-fill · activity · lightning-fill · apple · egg-fried · star-fill
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">لون الأيقونة (اختياري)</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="color" name="app_logo_color" id="app-logo-color" value="#FF6584"
+                  style="width:44px;height:44px;border:none;background:none;cursor:pointer;padding:0;border-radius:8px"
+                  oninput="previewLogo()">
+                <input type="text" id="app-logo-color-hex" class="form-control" placeholder="تلقائي"
+                  oninput="document.getElementById('app-logo-color').value=this.value" style="flex:1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Icon quick-pick -->
+          <div style="margin-bottom:1.5rem">
+            <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">اختيار سريع:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <?php foreach(['fire','heart-pulse-fill','activity','lightning-fill','apple','egg-fried','trophy-fill','star-fill','moon-fill','sun-fill','bicycle','person-running','droplet-fill','leaf-fill','basket-fill'] as $ic): ?>
+              <button type="button" onclick="pickIcon('<?=$ic?>')"
+                style="width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg-card2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:0.2s"
+                title="<?=$ic?>" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i class="bi bi-<?=$ic?>"></i>
+              </button>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <hr style="border-color:var(--border);margin:1.5rem 0">
+
+          <!-- Other settings -->
+          <div style="font-weight:700;font-size:0.95rem;color:var(--primary);margin-bottom:1rem;padding-bottom:6px;border-bottom:1px solid var(--border)">
+            <i class="bi bi-sliders"></i> إعدادات عامة
+          </div>
+
           <div class="form-group">
             <label class="form-label">الهدف اليومي الافتراضي (كالوري)</label>
             <input type="number" name="default_daily_goal" id="default-goal" class="form-control" placeholder="2000" min="500" max="10000">
           </div>
+
           <button type="submit" class="btn btn-primary"><i class="bi bi-floppy-fill"></i> حفظ</button>
         </form>
       </div>
@@ -388,8 +577,9 @@ function showSection(name) {
   document.getElementById('section-' + name).classList.add('active');
   event.currentTarget.classList.add('active');
 
-  if (name === 'users') loadUsers();
-  if (name === 'settings') loadSettings();
+  if (name === 'users')       loadUsers();
+  if (name === 'settings')    loadSettings();
+  if (name === 'multi-api')   loadMultiApiSettings();
   if (name === 'app-settings') loadSettings();
 }
 
@@ -425,35 +615,122 @@ async function loadSettings() {
   if (!data.success) return;
   const s = data.settings;
 
-  const providerEl         = document.getElementById('ai-provider');
-  const geminiKeyEl        = document.getElementById('gemini-api-key');
-  const geminiModelEl      = document.getElementById('gemini-model');
-  const openaiKeyEl        = document.getElementById('openai-api-key');
-  const openaiModelEl      = document.getElementById('openai-model');
-  const anthropicKeyEl     = document.getElementById('anthropic-api-key');
-  const anthropicModelEl   = document.getElementById('anthropic-model');
-  const openrouterKeyEl    = document.getElementById('openrouter-api-key');
-  const openrouterModelEl  = document.getElementById('openrouter-model');
-  const groqKeyEl          = document.getElementById('groq-api-key');
-  const groqModelEl        = document.getElementById('groq-model');
-  const appNameEl          = document.getElementById('app-name');
-  const goalEl             = document.getElementById('default-goal');
+  if (s.ai_provider)        document.getElementById('ai-provider').value          = s.ai_provider;
+  if (s.gemini_api_key)     document.getElementById('gemini-api-key').value        = s.gemini_api_key;
+  if (s.gemini_model)       document.getElementById('gemini-model').value          = s.gemini_model;
+  if (s.openai_api_key)     document.getElementById('openai-api-key').value        = s.openai_api_key;
+  if (s.openai_model)       document.getElementById('openai-model').value          = s.openai_model;
+  if (s.anthropic_api_key)  document.getElementById('anthropic-api-key').value     = s.anthropic_api_key;
+  if (s.anthropic_model)    document.getElementById('anthropic-model').value       = s.anthropic_model;
+  if (s.openrouter_api_key) document.getElementById('openrouter-api-key').value    = s.openrouter_api_key;
+  if (s.openrouter_model)   document.getElementById('openrouter-model').value      = s.openrouter_model;
+  if (s.groq_api_key)       document.getElementById('groq-api-key').value          = s.groq_api_key;
+  if (s.groq_model)         document.getElementById('groq-model').value            = s.groq_model;
+  if (s.app_name)           document.getElementById('app-name').value              = s.app_name;
+  if (s.default_daily_goal) document.getElementById('default-goal').value          = s.default_daily_goal;
+  if (s.app_logo_icon) {
+    document.getElementById('app-logo-icon').value = s.app_logo_icon;
+    previewLogo();
+  }
+  if (s.app_logo_color) {
+    document.getElementById('app-logo-color').value     = s.app_logo_color;
+    document.getElementById('app-logo-color-hex').value = s.app_logo_color;
+  }
 
-  if (s.ai_provider)         providerEl.value          = s.ai_provider;
-  if (s.gemini_api_key)      geminiKeyEl.value          = s.gemini_api_key;
-  if (s.gemini_model)        geminiModelEl.value        = s.gemini_model;
-  if (s.openai_api_key)      openaiKeyEl.value          = s.openai_api_key;
-  if (s.openai_model)        openaiModelEl.value        = s.openai_model;
-  if (s.anthropic_api_key)   anthropicKeyEl.value       = s.anthropic_api_key;
-  if (s.anthropic_model)     anthropicModelEl.value     = s.anthropic_model;
-  if (s.openrouter_api_key)  openrouterKeyEl.value      = s.openrouter_api_key;
-  if (s.openrouter_model)    openrouterModelEl.value    = s.openrouter_model;
-  if (s.groq_api_key)        groqKeyEl.value            = s.groq_api_key;
-  if (s.groq_model)          groqModelEl.value          = s.groq_model;
-  if (s.app_name)            appNameEl.value            = s.app_name;
-  if (s.default_daily_goal)  goalEl.value               = s.default_daily_goal;
+  toggleProviderFields(document.getElementById('ai-provider').value);
+}
 
-  toggleProviderFields(providerEl.value);
+async function loadMultiApiSettings() {
+  const res  = await fetch('../api/admin.php?action=get_settings');
+  const data = await res.json();
+  if (!data.success) return;
+  const s = data.settings;
+
+  const consensusOn  = s.consensus_mode === '1';
+  const fallbackOn   = s.fallback_enabled === '1';
+  const cpProviders  = JSON.parse(s.consensus_providers  || '[]');
+  const fbProviders  = JSON.parse(s.fallback_providers   || '[]');
+
+  document.getElementById('consensus-toggle').checked = consensusOn;
+  document.getElementById('fallback-toggle').checked  = fallbackOn;
+  toggleConsensusUI(consensusOn);
+  toggleFallbackUI(fallbackOn);
+
+  // restore consensus checkboxes
+  document.querySelectorAll('#consensus-checkboxes input[type=checkbox]').forEach(cb => {
+    cb.checked = cpProviders.includes(cb.value);
+    cb.closest('label').style.borderColor = cb.checked ? 'var(--primary)' : 'var(--border)';
+  });
+
+  // restore fallback checkboxes
+  document.querySelectorAll('#fallback-list input[type=checkbox]').forEach(cb => {
+    cb.checked = fbProviders.includes(cb.value);
+    cb.closest('label').style.borderColor = cb.checked ? 'var(--success)' : 'var(--border)';
+  });
+}
+
+function toggleConsensusUI(on) {
+  document.getElementById('consensus-label').textContent  = on ? 'مفعّل' : 'معطّل';
+  document.getElementById('consensus-label').style.color  = on ? 'var(--primary)' : 'var(--text-muted)';
+  document.getElementById('consensus-providers-wrap').style.display = on ? '' : 'none';
+}
+
+function toggleFallbackUI(on) {
+  document.getElementById('fallback-label').textContent = on ? 'مفعّل' : 'معطّل';
+  document.getElementById('fallback-label').style.color = on ? 'var(--success)' : 'var(--text-muted)';
+  document.getElementById('fallback-order-wrap').style.display = on ? '' : 'none';
+}
+
+// Sync checkbox arrays to hidden inputs before submit
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#consensus-checkboxes input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('label').style.borderColor = cb.checked ? 'var(--primary)' : 'var(--border)';
+      syncConsensusProviders();
+    });
+  });
+  document.querySelectorAll('#fallback-list input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('label').style.borderColor = cb.checked ? 'var(--success)' : 'var(--border)';
+      syncFallbackProviders();
+    });
+  });
+});
+
+function syncConsensusProviders() {
+  const checked = [...document.querySelectorAll('#consensus-checkboxes input:checked')].map(c => c.value);
+  document.getElementById('consensus-providers-input').value = JSON.stringify(checked);
+}
+function syncFallbackProviders() {
+  const checked = [...document.querySelectorAll('#fallback-list input:checked')].map(c => c.value);
+  document.getElementById('fallback-providers-input').value = JSON.stringify(checked);
+}
+
+document.getElementById('multi-api-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  syncConsensusProviders();
+  syncFallbackProviders();
+  const fd = new FormData(e.target);
+  if (!document.getElementById('consensus-toggle').checked) fd.set('consensus_mode', '0');
+  if (!document.getElementById('fallback-toggle').checked)  fd.set('fallback_enabled', '0');
+  fd.append('action', 'save_settings');
+  const res  = await fetch('../api/admin.php', {method:'POST', body:fd});
+  const data = await res.json();
+  document.getElementById('multi-api-alert').innerHTML =
+    `<div class="alert alert-${data.success?'success':'error'}"><i class="bi bi-${data.success?'check-circle-fill':'x-circle-fill'}"></i> ${data.message}</div>`;
+});
+
+// Logo branding helpers
+function previewLogo() {
+  const icon  = document.getElementById('app-logo-icon').value.trim() || 'fire';
+  const color = document.getElementById('app-logo-color').value || '';
+  const el    = document.getElementById('logo-preview-icon');
+  el.className = 'bi bi-' + icon;
+  el.style.color = color;
+}
+function pickIcon(name) {
+  document.getElementById('app-logo-icon').value = name;
+  previewLogo();
 }
 
 async function loadUsers() {
@@ -524,6 +801,9 @@ document.getElementById('app-settings-form').addEventListener('submit', async e 
   e.preventDefault();
   const fd = new FormData(e.target);
   fd.append('action','save_settings');
+  // sync color hex field
+  const colorHex = document.getElementById('app-logo-color-hex').value.trim();
+  if (colorHex) fd.set('app_logo_color', colorHex);
   const res  = await fetch('../api/admin.php', {method:'POST', body:fd});
   const data = await res.json();
   document.getElementById('app-settings-alert').innerHTML =

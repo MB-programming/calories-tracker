@@ -1,22 +1,24 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
-$nav_items = [
-  ['href' => '/index.php',   'icon' => 'bi-house-fill',     'label' => 'الرئيسية', 'file' => 'index.php'],
-  ['href' => '/camera.php',  'icon' => 'bi-camera-fill',    'label' => 'تصوير',    'file' => 'camera.php'],
-  ['href' => '/workout.php', 'icon' => 'bi-lightning-fill', 'label' => 'تمارين',   'file' => 'workout.php'],
-  ['href' => '/history.php', 'icon' => 'bi-calendar3',      'label' => 'السجل',    'file' => 'history.php'],
-  ['href' => '/profile.php', 'icon' => 'bi-person-fill',    'label' => 'ملفي',     'file' => 'profile.php'],
-];
 ?>
 <nav class="mobile-nav" aria-label="التنقل الرئيسي">
   <div class="mobile-nav-inner">
-    <?php foreach ($nav_items as $item): ?>
-      <a href="<?= $item['href'] ?>"
-         class="mobile-nav-item<?= $current === $item['file'] ? ' active' : '' ?>"
-         aria-label="<?= $item['label'] ?>">
-        <i class="bi <?= $item['icon'] ?>"></i>
-        <span><?= $item['label'] ?></span>
-      </a>
-    <?php endforeach; ?>
+    <a href="/index.php"   class="mobile-nav-item<?= $current==='index.php'   ? ' active':'' ?>">
+      <i class="bi bi-house-fill"></i><span>اليوم</span>
+    </a>
+    <a href="/history.php" class="mobile-nav-item<?= $current==='history.php' ? ' active':'' ?>">
+      <i class="bi bi-calendar3"></i><span>السجل</span>
+    </a>
+
+    <div class="mobile-nav-center">
+      <a href="/camera.php" title="تصوير الطعام"><i class="bi bi-plus-lg"></i></a>
+    </div>
+
+    <a href="/workout.php" class="mobile-nav-item<?= $current==='workout.php' ? ' active':'' ?>">
+      <i class="bi bi-lightning-fill"></i><span>تمارين</span>
+    </a>
+    <a href="/profile.php" class="mobile-nav-item<?= $current==='profile.php' ? ' active':'' ?>">
+      <i class="bi bi-person-fill"></i><span>ملفي</span>
+    </a>
   </div>
 </nav>

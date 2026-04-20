@@ -28,6 +28,7 @@
     userDiv.insertBefore(btn, userDiv.firstChild);
   }
 
+  /* Migrate old key format: old code used 'light-mode' class with dark default */
   const saved = localStorage.getItem(KEY) || 'light';
   if (saved === 'dark') document.body.classList.add('dark-mode');
 

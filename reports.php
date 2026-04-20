@@ -12,9 +12,9 @@ $dailyGoal = $_SESSION['daily_goal'] ?? 2000;
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>التقارير - CalTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="stylesheet" href="assets/css/style.css?v=3">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 <style>
 .report-card { background: var(--bg-card2); border:1px solid var(--border); border-radius:14px; padding:1.25rem; transition: var(--transition); }
 .report-card:hover { border-color:var(--primary); transform:translateY(-2px); }
@@ -310,12 +310,8 @@ async function logout() {
   location.href = 'login.php';
 }
 
-window.addEventListener('load', () => {
-  const main = document.getElementById('main-content');
-  main.style.opacity = '1';
-  if (window.Motion) {
-    window.Motion.animate('#main-content', { opacity:[0,1], y:[20,0] }, { duration:0.5, easing:[0.4,0,0.2,1] });
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('main-content').style.opacity = '1';
   loadWeekly();
 });
 
@@ -323,8 +319,6 @@ const style = document.createElement('style');
 style.textContent = '@keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }';
 document.head.appendChild(style);
 </script>
-<script src="https://cdn.jsdelivr.net/npm/framer-motion@11/dist/framer-motion.js"></script>
-<script src="assets/js/theme.js"></script>
 <?php include 'includes/mobile_nav.php'; ?>
 </body>
 </html>

@@ -146,11 +146,11 @@ $userName = $_SESSION['user_name'];
               </div>
               <div class="setting-control">
                 <select name="gemini_model" id="gemini-model" class="form-control" style="width:260px">
-                  <option value="gemini-1.5-flash">gemini-1.5-flash — سريع ومجاني</option>
-                  <option value="gemini-1.5-pro">gemini-1.5-pro — أدق ومجاني</option>
-                  <option value="gemini-2.0-flash">gemini-2.0-flash — أحدث وأسرع</option>
+                  <option value="gemini-2.5-flash">gemini-2.5-flash — الأحدث والأسرع (موصى)</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash — سريع ومجاني</option>
                   <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite — اقتصادي</option>
-                  <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview — أحدث تجريبي</option>
+                  <option value="gemini-1.5-pro">gemini-1.5-pro — أدق</option>
+                  <option value="gemini-1.5-flash">gemini-1.5-flash — خفيف</option>
                 </select>
               </div>
             </div>
@@ -229,10 +229,10 @@ $userName = $_SESSION['user_name'];
               </div>
               <div class="setting-control">
                 <select name="openrouter_model" id="openrouter-model" class="form-control" style="width:320px">
-                  <option value="google/gemini-2.0-flash-exp:free">google/gemini-2.0-flash-exp:free — Gemini مجاني</option>
-                  <option value="meta-llama/llama-4-scout:free">meta-llama/llama-4-scout:free — Llama 4 Scout مجاني</option>
+                  <option value="google/gemma-4-26b-a4b-it:free">google/gemma-4-26b-a4b-it:free — Gemma 4 Vision مجاني (موصى)</option>
+                  <option value="meta-llama/llama-4-scout-17b-16e-instruct:free">meta-llama/llama-4-scout-17b-16e-instruct:free — Llama 4 Scout مجاني</option>
+                  <option value="meta-llama/llama-4-maverick-17b-128e-instruct:free">meta-llama/llama-4-maverick-17b-128e-instruct:free — Llama 4 Maverick مجاني</option>
                   <option value="qwen/qwen2.5-vl-72b-instruct:free">qwen/qwen2.5-vl-72b-instruct:free — Qwen Vision مجاني</option>
-                  <option value="meta-llama/llama-4-maverick:free">meta-llama/llama-4-maverick:free — Llama 4 Maverick مجاني</option>
                 </select>
               </div>
             </div>
@@ -309,7 +309,7 @@ $userName = $_SESSION['user_name'];
             <li>افتح قسم "Keys" وأنشئ مفتاح API جديد يبدأ بـ <code>sk-or-</code></li>
             <li>انسخه في الحقل أعلاه</li>
             <li>اختر أي نموذج ينتهي بـ <strong>:free</strong> — جميعها مجانية تماماً</li>
-            <li>النموذج المُوصى: <strong>google/gemini-2.0-flash-exp:free</strong> للدقة العالية</li>
+            <li>النموذج المُوصى: <strong>google/gemma-4-26b-a4b-it:free</strong> لدعم الصور والدقة العالية</li>
             <li>لا يوجد حد يومي صارم — مناسب للاستخدام المكثف</li>
           </ol>
         </div>
@@ -617,13 +617,26 @@ async function loadSettings() {
 
   if (s.ai_provider)        document.getElementById('ai-provider').value          = s.ai_provider;
   if (s.gemini_api_key)     document.getElementById('gemini-api-key').value        = s.gemini_api_key;
-  if (s.gemini_model)       document.getElementById('gemini-model').value          = s.gemini_model;
+  if (s.gemini_model) {
+    const geminiMigrate = {
+      'gemini-1.5-flash-latest': 'gemini-2.5-flash',
+      'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash',
+    };
+    document.getElementById('gemini-model').value = geminiMigrate[s.gemini_model] || s.gemini_model;
+  }
   if (s.openai_api_key)     document.getElementById('openai-api-key').value        = s.openai_api_key;
   if (s.openai_model)       document.getElementById('openai-model').value          = s.openai_model;
   if (s.anthropic_api_key)  document.getElementById('anthropic-api-key').value     = s.anthropic_api_key;
   if (s.anthropic_model)    document.getElementById('anthropic-model').value       = s.anthropic_model;
   if (s.openrouter_api_key) document.getElementById('openrouter-api-key').value    = s.openrouter_api_key;
-  if (s.openrouter_model)   document.getElementById('openrouter-model').value      = s.openrouter_model;
+  if (s.openrouter_model) {
+    const orMigrate = {
+      'google/gemini-2.0-flash-exp:free':  'google/gemma-4-26b-a4b-it:free',
+      'meta-llama/llama-4-scout:free':     'meta-llama/llama-4-scout-17b-16e-instruct:free',
+      'meta-llama/llama-4-maverick:free':  'meta-llama/llama-4-maverick-17b-128e-instruct:free',
+    };
+    document.getElementById('openrouter-model').value = orMigrate[s.openrouter_model] || s.openrouter_model;
+  }
   if (s.groq_api_key)       document.getElementById('groq-api-key').value          = s.groq_api_key;
   if (s.groq_model)         document.getElementById('groq-model').value            = s.groq_model;
   if (s.app_name)           document.getElementById('app-name').value              = s.app_name;

@@ -307,7 +307,7 @@ function buildVisionCurlHandle(string $provider, $pdo, string $imageData, string
 
         case 'openrouter':
             $key   = getSetting($pdo, 'openrouter_api_key', '');
-            $model = getSetting($pdo, 'openrouter_model', 'google/gemini-2.0-flash-exp:free');
+            $model = getSetting($pdo, 'openrouter_model', 'google/gemma-4-26b-a4b-it:free');
             if (!$key) return null;
             return makeOpenAICompatVisionHandle(
                 'https://openrouter.ai/api/v1/chat/completions',
@@ -374,7 +374,7 @@ function buildTextCurlHandle(string $provider, $pdo, string $systemMsg, string $
 
         case 'openrouter':
             $key   = getSetting($pdo, 'openrouter_api_key', '');
-            $model = getSetting($pdo, 'openrouter_model', 'google/gemini-2.0-flash-exp:free');
+            $model = getSetting($pdo, 'openrouter_model', 'google/gemma-4-26b-a4b-it:free');
             if (!$key) return null;
             return makeOpenAICompatTextHandle(
                 'https://openrouter.ai/api/v1/chat/completions',
@@ -435,11 +435,11 @@ function parseProviderResponse(string $provider, string $response, int $httpCode
 function callGeminiVision($pdo, string $imageData, string $mimeType, string $prompt): array
 {
     $apiKey       = getSetting($pdo, 'gemini_api_key', '');
-    $primaryModel = getSetting($pdo, 'gemini_model', 'gemini-1.5-flash');
+    $primaryModel = getSetting($pdo, 'gemini_model', 'gemini-2.5-flash');
     if (!$apiKey) return ['success'=>false, 'message'=>'لم يتم إعداد مفتاح Gemini API', 'provider'=>'gemini'];
 
-    $allModels = ['gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash-preview-04-17',
-                  'gemini-1.5-pro','gemini-1.5-flash-8b','gemini-1.5-flash-latest'];
+    $allModels = ['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite',
+                  'gemini-1.5-pro','gemini-1.5-flash','gemini-1.5-flash-8b'];
     $models = array_merge([$primaryModel], array_values(array_filter($allModels, fn($m) => $m !== $primaryModel)));
 
     $payload = [
@@ -476,29 +476,44 @@ function callGeminiVision($pdo, string $imageData, string $mimeType, string $pro
 
 function callGeminiText($pdo, string $systemMsg, string $userMsg): array
 {
-    $apiKey = getSetting($pdo, 'gemini_api_key', '');
-    $model  = getSetting($pdo, 'gemini_model', 'gemini-1.5-flash');
+    $apiKey       = getSetting($pdo, 'gemini_api_key', '');
+    $primaryModel = getSetting($pdo, 'gemini_model', 'gemini-2.5-flash');
     if (!$apiKey) return ['success'=>false, 'message'=>'لم يتم إعداد مفتاح Gemini API', 'provider'=>'gemini'];
+
+    $allModels = ['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite',
+                  'gemini-1.5-pro','gemini-1.5-flash','gemini-1.5-flash-8b'];
+    $models = array_merge([$primaryModel], array_values(array_filter($allModels, fn($m) => $m !== $primaryModel)));
 
     $payload = [
         'contents' => [['parts' => [['text' => $systemMsg."\n\nالمستخدم: ".$userMsg]]]],
         'generationConfig' => ['temperature'=>0.1,'maxOutputTokens'=>400],
     ];
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true,
-        CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS=>json_encode($payload), CURLOPT_TIMEOUT=>30]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
 
-    $data = json_decode($response, true);
-    if ($httpCode !== 200 || empty($data['candidates'][0]['content']['parts'][0]['text']))
-        return ['success'=>false, 'message'=>$data['error']['message']??'فشل Gemini', 'provider'=>'gemini'];
-    $result = parseJsonResult($data['candidates'][0]['content']['parts'][0]['text']);
-    if ($result['success']) { $result['model_used'] = $model; $result['provider'] = 'gemini'; }
-    return $result;
+    $lastError = 'فشلت جميع نماذج Gemini';
+    foreach ($models as $model) {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true,
+            CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS=>json_encode($payload), CURLOPT_TIMEOUT=>30]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) { $lastError = 'خطأ في الاتصال: '.$curlErr; continue; }
+        $data = json_decode($response, true);
+        if ($httpCode !== 200 || empty($data['candidates'][0]['content']['parts'][0]['text'])) {
+            $lastError = $data['error']['message'] ?? "فشل النموذج {$model}";
+            continue;
+        }
+        $result = parseJsonResult($data['candidates'][0]['content']['parts'][0]['text']);
+        if (!$result['success']) { $lastError = $result['message']; continue; }
+        $result['model_used'] = $model;
+        $result['provider']   = 'gemini';
+        return $result;
+    }
+    return ['success'=>false, 'message'=>$lastError, 'provider'=>'gemini'];
 }
 
 

@@ -233,6 +233,8 @@ function runFallbackVision(array $chain, $pdo, string $imageData, string $mimeTy
         if (!isProviderConfigured($provider, $pdo)) continue;
         if ($provider === 'gemini') {
             $result = callGeminiVision($pdo, $imageData, $mimeType, $prompt);
+        } elseif ($provider === 'targofit') {
+            $result = callTargofitVision($pdo, $imageData);
         } else {
             $info = buildVisionCurlHandle($provider, $pdo, $imageData, $mimeType, $prompt);
             if (!$info) continue;
@@ -430,6 +432,82 @@ function parseProviderResponse(string $provider, string $response, int $httpCode
 }
 
 
+// ═══════════════════ TARGOFIT (Python image→text + any text model) ═══════════
+
+function callTargofitVision($pdo, string $imageData): array
+{
+    $pyScript = __DIR__ . '/targofit.py';
+    if (!file_exists($pyScript)) {
+        return ['success'=>false, 'message'=>'Targofit: ملف targofit.py غير موجود', 'provider'=>'targofit'];
+    }
+
+    // ── Step 1: Run Python to get text description ──
+    $python  = getSetting($pdo, 'targofit_python', 'python3');
+    $cmd     = escapeshellcmd($python) . ' ' . escapeshellarg($pyScript);
+    $descSpec = [0 => ['pipe','r'], 1 => ['pipe','w'], 2 => ['pipe','w']];
+    $proc    = @proc_open($cmd, $descSpec, $pipes);
+
+    if (!is_resource($proc)) {
+        return ['success'=>false, 'message'=>'Targofit: تعذّر تشغيل Python — تأكد من تثبيت python3', 'provider'=>'targofit'];
+    }
+
+    fwrite($pipes[0], json_encode(['image' => $imageData]));
+    fclose($pipes[0]);
+
+    $stdout = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($proc);
+
+    $pyResult = json_decode(trim($stdout), true);
+    if (!$pyResult || empty($pyResult['success'])) {
+        $err = $pyResult['error'] ?? 'فشل تحليل الصورة بـ Python';
+        return ['success'=>false, 'message'=>"Targofit: {$err}", 'provider'=>'targofit'];
+    }
+
+    // ── Step 2: Build text prompt from description ──
+    $desc   = $pyResult['description'];
+    $method = $pyResult['method'] ?? 'analysis';
+    $hint   = $pyResult['arabic_hint'] ?? '';
+
+    $systemMsg = 'أنت خبير تغذية. عندما يسألك المستخدم عن طعام أو يصفه، أعط القيم الغذائية بصيغة JSON فقط بدون أي نص إضافي: {"food_name":"...","calories":0,"protein":0,"carbs":0,"fat":0,"description":"...","confidence":"medium"}. إذا كان الوصف غير واضح، أعد {"error":"يرجى وصف الطعام أو الكمية بشكل أوضح"}.';
+    $userMsg = "وصف الصورة: {$desc}" . ($hint && $hint !== $desc ? "\nمؤشرات إضافية: {$hint}" : '');
+
+    // ── Step 3: Try text providers in fallback order ──
+    $primary   = getSetting($pdo, 'ai_provider', 'gemini');
+    $fallbacks = json_decode(getSetting($pdo, 'fallback_providers', '[]'), true) ?: [];
+    $chain     = array_unique(array_filter(
+        array_merge([$primary], $fallbacks),
+        fn($p) => $p !== 'targofit'
+    ));
+
+    foreach ($chain as $provider) {
+        if (!isProviderConfigured($provider, $pdo)) continue;
+
+        if ($provider === 'gemini') {
+            $result = callGeminiText($pdo, $systemMsg, $userMsg);
+        } else {
+            $info = buildTextCurlHandle($provider, $pdo, $systemMsg, $userMsg);
+            if (!$info) continue;
+            $response = curl_exec($info['ch']);
+            $httpCode = curl_getinfo($info['ch'], CURLINFO_HTTP_CODE);
+            $curlErr  = curl_error($info['ch']);
+            curl_close($info['ch']);
+            if ($curlErr) continue;
+            $result = parseProviderResponse($provider, $response, $httpCode, 'text');
+        }
+
+        if ($result['success']) {
+            $result['provider']   = 'targofit';
+            $result['model_used'] = "Targofit({$method}) → " . ($result['model_used'] ?? $provider);
+            return $result;
+        }
+    }
+
+    return ['success'=>false, 'message'=>'Targofit: فشلت جميع نماذج النص — تأكد من إعداد مزود AI نصي', 'provider'=>'targofit'];
+}
+
+
 // ═══════════════════ GEMINI (built-in model fallback) ════════════════════════
 
 function callGeminiVision($pdo, string $imageData, string $mimeType, string $prompt): array
@@ -523,6 +601,12 @@ function isProviderConfigured(string $provider, $pdo): bool
 {
     static $cache = [];
     if (isset($cache[$provider])) return $cache[$provider];
+
+    if ($provider === 'targofit') {
+        $cache[$provider] = file_exists(__DIR__ . '/targofit.py');
+        return $cache[$provider];
+    }
+
     $keyMap = [
         'gemini'     => 'gemini_api_key',
         'openai'     => 'openai_api_key',

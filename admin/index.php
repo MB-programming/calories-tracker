@@ -118,6 +118,7 @@ $userName = $_SESSION['user_name'];
                   <option value="gemini">Google Gemini (مجاني)</option>
                   <option value="openrouter">OpenRouter (نماذج مجانية)</option>
                   <option value="groq">Groq — Llama Vision (مجاني)</option>
+                  <option value="targofit">⚡ Targofit Model (Python + نموذج نصي)</option>
                 </optgroup>
                 <optgroup label="مدفوع">
                   <option value="openai">OpenAI GPT-4 Vision</option>
@@ -264,6 +265,52 @@ $userName = $_SESSION['user_name'];
             </div>
           </div>
 
+          <!-- Targofit Fields -->
+          <div id="targofit-fields" class="provider-fields">
+            <div style="background:linear-gradient(135deg,rgba(108,99,255,0.08),rgba(255,101,132,0.08));border:1.5px solid var(--primary);border-radius:14px;padding:1.2rem;margin-bottom:0.5rem">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.8rem">
+                <span style="font-size:1.4rem">⚡</span>
+                <div>
+                  <div style="font-weight:700;font-size:1rem;color:var(--primary)">Targofit Model</div>
+                  <div style="font-size:0.82rem;color:var(--text-muted)">يحلل الصورة بـ Python → يحوّلها نصاً → يبعثها لأي نموذج AI نصي</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;font-size:0.82rem;color:var(--text-muted)">
+                <div style="background:var(--bg-card);border-radius:8px;padding:0.6rem;text-align:center">
+                  <div style="font-size:1.2rem">🐍</div>
+                  <div style="font-weight:600">Python</div>
+                  <div>يحلل الألوان والتركيب</div>
+                </div>
+                <div style="background:var(--bg-card);border-radius:8px;padding:0.6rem;text-align:center">
+                  <div style="font-size:1.2rem">📝</div>
+                  <div style="font-weight:600">نص عربي</div>
+                  <div>يوصف الطعام كلاماً</div>
+                </div>
+                <div style="background:var(--bg-card);border-radius:8px;padding:0.6rem;text-align:center">
+                  <div style="font-size:1.2rem">🤖</div>
+                  <div style="font-weight:600">AI نصي</div>
+                  <div>يحسب القيم الغذائية</div>
+                </div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">مسار Python</div>
+                <div class="setting-desc">المسار الكامل لـ Python3 على الخادم (افتراضي: <code>python3</code>)</div>
+              </div>
+              <div class="setting-control">
+                <input type="text" name="targofit_python" id="targofit-python" class="form-control"
+                  style="width:220px" placeholder="python3">
+              </div>
+            </div>
+            <div style="background:var(--bg-card2);border-radius:10px;padding:0.9rem;font-size:0.82rem;color:var(--text-muted);line-height:1.8">
+              <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px"><i class="bi bi-terminal-fill"></i> متطلبات التثبيت</div>
+              <div>الحد الأدنى (تحليل ألوان): <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px">pip install Pillow</code></div>
+              <div style="margin-top:4px">دقة أعلى (BLIP): <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px">pip install transformers torch</code> ثم تشغيل التحميل مرة واحدة</div>
+              <div style="margin-top:6px;color:var(--warning)"><i class="bi bi-exclamation-triangle-fill"></i> يحتاج لمزود AI نصي مُعدّ (Gemini أو Groq) ليُرسل له الوصف</div>
+            </div>
+          </div>
+
           <div style="margin-top:1.5rem;display:flex;gap:10px">
             <button type="submit" class="btn btn-primary"><i class="bi bi-floppy-fill"></i> حفظ الإعدادات</button>
             <button type="button" class="btn btn-secondary" onclick="testConnection()" id="test-btn"><i class="bi bi-plug-fill"></i> اختبار الاتصال</button>
@@ -322,6 +369,16 @@ $userName = $_SESSION['user_name'];
             <li>الحد المجاني: 14,400 طلب/يوم — أكثر من كافٍ للاستخدام العادي</li>
           </ol>
         </div>
+        <div id="setup-guide-targofit" style="display:none">
+          <ol style="padding-right:1.2rem;display:flex;flex-direction:column;gap:8px;color:var(--text-muted);font-size:0.9rem;line-height:1.7">
+            <li>تأكد من تثبيت <strong style="color:var(--primary)">Python3</strong> على الخادم: <code>python3 --version</code></li>
+            <li>ثبّت Pillow (الحد الأدنى): <code>pip install Pillow</code></li>
+            <li>اختياري — للدقة الأعلى ثبّت BLIP: <code>pip install transformers torch</code></li>
+            <li>أنشئ cache النموذج مرة واحدة فقط من سطر الأوامر (إن أردت BLIP)</li>
+            <li>يجب إعداد مزود AI نصي (Gemini أو Groq) لأن Targofit يبعث له الوصف كنص</li>
+            <li><strong>⚡ الميزة الأساسية</strong>: يعمل حتى لو فشلت جميع نماذج الصور — يحوّل الصورة لنص ويسأل أي AI نصي</li>
+          </ol>
+        </div>
       </div>
     </section>
 
@@ -369,6 +426,10 @@ $userName = $_SESSION['user_name'];
                   <span style="font-size:0.88rem;font-weight:600"><?=$label?></span>
                 </label>
                 <?php endforeach; ?>
+                <label style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;padding:8px 14px;cursor:not-allowed;opacity:0.5;transition:0.2s" title="Targofit يعمل في وضع Fallback فقط">
+                  <i class="bi bi-lightning-fill" style="color:#a0a0a0"></i>
+                  <span style="font-size:0.88rem;font-weight:600">Targofit (Fallback فقط)</span>
+                </label>
               </div>
               <input type="hidden" id="consensus-providers-input" name="consensus_providers" value="[]">
               <div style="margin-top:0.75rem;font-size:0.82rem;color:var(--text-muted)">
@@ -405,6 +466,7 @@ $userName = $_SESSION['user_name'];
                   ['groq',       'Groq Llama',        'lightning-fill',  'var(--warning)'],
                   ['openai',     'OpenAI GPT-4o',     'cpu-fill',        'var(--success)'],
                   ['anthropic',  'Anthropic Claude',  'braces-asterisk', 'var(--secondary)'],
+                  ['targofit',   'Targofit Model ⚡', 'cpu',             '#9B59B6'],
                 ] as $idx => [$val,$label,$icon,$color]): ?>
                 <label class="fb-item" data-val="<?=$val?>" style="display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;padding:9px 14px;cursor:pointer;transition:0.2s">
                   <span style="font-size:0.78rem;color:var(--text-muted);width:20px;text-align:center;font-weight:700"><?=$idx+1?></span>
@@ -639,6 +701,7 @@ async function loadSettings() {
   }
   if (s.groq_api_key)       document.getElementById('groq-api-key').value          = s.groq_api_key;
   if (s.groq_model)         document.getElementById('groq-model').value            = s.groq_model;
+  if (s.targofit_python)    document.getElementById('targofit-python').value       = s.targofit_python;
   if (s.app_name)           document.getElementById('app-name').value              = s.app_name;
   if (s.default_daily_goal) document.getElementById('default-goal').value          = s.default_daily_goal;
   if (s.app_logo_icon) {
@@ -863,7 +926,7 @@ function toggleProviderFields(provider) {
   const el = document.getElementById(provider + '-fields');
   if (el) el.classList.add('active');
 
-  const guides = ['gemini', 'openai', 'anthropic', 'openrouter', 'groq'];
+  const guides = ['gemini', 'openai', 'anthropic', 'openrouter', 'groq', 'targofit'];
   guides.forEach(p => {
     const g = document.getElementById('setup-guide-' + p);
     if (g) g.style.display = provider === p ? '' : 'none';

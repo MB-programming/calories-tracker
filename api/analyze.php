@@ -233,6 +233,8 @@ function runFallbackVision(array $chain, $pdo, string $imageData, string $mimeTy
         if (!isProviderConfigured($provider, $pdo)) continue;
         if ($provider === 'gemini') {
             $result = callGeminiVision($pdo, $imageData, $mimeType, $prompt);
+        } elseif ($provider === 'targofit') {
+            $result = callTargofitVision($pdo, $imageData);
         } else {
             $info = buildVisionCurlHandle($provider, $pdo, $imageData, $mimeType, $prompt);
             if (!$info) continue;
@@ -307,7 +309,7 @@ function buildVisionCurlHandle(string $provider, $pdo, string $imageData, string
 
         case 'openrouter':
             $key   = getSetting($pdo, 'openrouter_api_key', '');
-            $model = getSetting($pdo, 'openrouter_model', 'google/gemini-2.0-flash-exp:free');
+            $model = getSetting($pdo, 'openrouter_model', 'google/gemma-4-26b-a4b-it:free');
             if (!$key) return null;
             return makeOpenAICompatVisionHandle(
                 'https://openrouter.ai/api/v1/chat/completions',
@@ -374,7 +376,7 @@ function buildTextCurlHandle(string $provider, $pdo, string $systemMsg, string $
 
         case 'openrouter':
             $key   = getSetting($pdo, 'openrouter_api_key', '');
-            $model = getSetting($pdo, 'openrouter_model', 'google/gemini-2.0-flash-exp:free');
+            $model = getSetting($pdo, 'openrouter_model', 'google/gemma-4-26b-a4b-it:free');
             if (!$key) return null;
             return makeOpenAICompatTextHandle(
                 'https://openrouter.ai/api/v1/chat/completions',
@@ -430,16 +432,92 @@ function parseProviderResponse(string $provider, string $response, int $httpCode
 }
 
 
+// ═══════════════════ TARGOFIT (Python image→text + any text model) ═══════════
+
+function callTargofitVision($pdo, string $imageData): array
+{
+    $pyScript = __DIR__ . '/targofit.py';
+    if (!file_exists($pyScript)) {
+        return ['success'=>false, 'message'=>'Targofit: ملف targofit.py غير موجود', 'provider'=>'targofit'];
+    }
+
+    // ── Step 1: Run Python to get text description ──
+    $python  = getSetting($pdo, 'targofit_python', 'python3');
+    $cmd     = escapeshellcmd($python) . ' ' . escapeshellarg($pyScript);
+    $descSpec = [0 => ['pipe','r'], 1 => ['pipe','w'], 2 => ['pipe','w']];
+    $proc    = @proc_open($cmd, $descSpec, $pipes);
+
+    if (!is_resource($proc)) {
+        return ['success'=>false, 'message'=>'Targofit: تعذّر تشغيل Python — تأكد من تثبيت python3', 'provider'=>'targofit'];
+    }
+
+    fwrite($pipes[0], json_encode(['image' => $imageData]));
+    fclose($pipes[0]);
+
+    $stdout = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($proc);
+
+    $pyResult = json_decode(trim($stdout), true);
+    if (!$pyResult || empty($pyResult['success'])) {
+        $err = $pyResult['error'] ?? 'فشل تحليل الصورة بـ Python';
+        return ['success'=>false, 'message'=>"Targofit: {$err}", 'provider'=>'targofit'];
+    }
+
+    // ── Step 2: Build text prompt from description ──
+    $desc   = $pyResult['description'];
+    $method = $pyResult['method'] ?? 'analysis';
+    $hint   = $pyResult['arabic_hint'] ?? '';
+
+    $systemMsg = 'أنت خبير تغذية. عندما يسألك المستخدم عن طعام أو يصفه، أعط القيم الغذائية بصيغة JSON فقط بدون أي نص إضافي: {"food_name":"...","calories":0,"protein":0,"carbs":0,"fat":0,"description":"...","confidence":"medium"}. إذا كان الوصف غير واضح، أعد {"error":"يرجى وصف الطعام أو الكمية بشكل أوضح"}.';
+    $userMsg = "وصف الصورة: {$desc}" . ($hint && $hint !== $desc ? "\nمؤشرات إضافية: {$hint}" : '');
+
+    // ── Step 3: Try text providers in fallback order ──
+    $primary   = getSetting($pdo, 'ai_provider', 'gemini');
+    $fallbacks = json_decode(getSetting($pdo, 'fallback_providers', '[]'), true) ?: [];
+    $chain     = array_unique(array_filter(
+        array_merge([$primary], $fallbacks),
+        fn($p) => $p !== 'targofit'
+    ));
+
+    foreach ($chain as $provider) {
+        if (!isProviderConfigured($provider, $pdo)) continue;
+
+        if ($provider === 'gemini') {
+            $result = callGeminiText($pdo, $systemMsg, $userMsg);
+        } else {
+            $info = buildTextCurlHandle($provider, $pdo, $systemMsg, $userMsg);
+            if (!$info) continue;
+            $response = curl_exec($info['ch']);
+            $httpCode = curl_getinfo($info['ch'], CURLINFO_HTTP_CODE);
+            $curlErr  = curl_error($info['ch']);
+            curl_close($info['ch']);
+            if ($curlErr) continue;
+            $result = parseProviderResponse($provider, $response, $httpCode, 'text');
+        }
+
+        if ($result['success']) {
+            $result['provider']   = 'targofit';
+            $result['model_used'] = "Targofit({$method}) → " . ($result['model_used'] ?? $provider);
+            return $result;
+        }
+    }
+
+    return ['success'=>false, 'message'=>'Targofit: فشلت جميع نماذج النص — تأكد من إعداد مزود AI نصي', 'provider'=>'targofit'];
+}
+
+
 // ═══════════════════ GEMINI (built-in model fallback) ════════════════════════
 
 function callGeminiVision($pdo, string $imageData, string $mimeType, string $prompt): array
 {
     $apiKey       = getSetting($pdo, 'gemini_api_key', '');
-    $primaryModel = getSetting($pdo, 'gemini_model', 'gemini-1.5-flash');
+    $primaryModel = getSetting($pdo, 'gemini_model', 'gemini-2.5-flash');
     if (!$apiKey) return ['success'=>false, 'message'=>'لم يتم إعداد مفتاح Gemini API', 'provider'=>'gemini'];
 
-    $allModels = ['gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash-preview-04-17',
-                  'gemini-1.5-pro','gemini-1.5-flash-8b','gemini-1.5-flash-latest'];
+    $allModels = ['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite',
+                  'gemini-1.5-pro','gemini-1.5-flash','gemini-1.5-flash-8b'];
     $models = array_merge([$primaryModel], array_values(array_filter($allModels, fn($m) => $m !== $primaryModel)));
 
     $payload = [
@@ -476,29 +554,44 @@ function callGeminiVision($pdo, string $imageData, string $mimeType, string $pro
 
 function callGeminiText($pdo, string $systemMsg, string $userMsg): array
 {
-    $apiKey = getSetting($pdo, 'gemini_api_key', '');
-    $model  = getSetting($pdo, 'gemini_model', 'gemini-1.5-flash');
+    $apiKey       = getSetting($pdo, 'gemini_api_key', '');
+    $primaryModel = getSetting($pdo, 'gemini_model', 'gemini-2.5-flash');
     if (!$apiKey) return ['success'=>false, 'message'=>'لم يتم إعداد مفتاح Gemini API', 'provider'=>'gemini'];
+
+    $allModels = ['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite',
+                  'gemini-1.5-pro','gemini-1.5-flash','gemini-1.5-flash-8b'];
+    $models = array_merge([$primaryModel], array_values(array_filter($allModels, fn($m) => $m !== $primaryModel)));
 
     $payload = [
         'contents' => [['parts' => [['text' => $systemMsg."\n\nالمستخدم: ".$userMsg]]]],
         'generationConfig' => ['temperature'=>0.1,'maxOutputTokens'=>400],
     ];
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true,
-        CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS=>json_encode($payload), CURLOPT_TIMEOUT=>30]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
 
-    $data = json_decode($response, true);
-    if ($httpCode !== 200 || empty($data['candidates'][0]['content']['parts'][0]['text']))
-        return ['success'=>false, 'message'=>$data['error']['message']??'فشل Gemini', 'provider'=>'gemini'];
-    $result = parseJsonResult($data['candidates'][0]['content']['parts'][0]['text']);
-    if ($result['success']) { $result['model_used'] = $model; $result['provider'] = 'gemini'; }
-    return $result;
+    $lastError = 'فشلت جميع نماذج Gemini';
+    foreach ($models as $model) {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true,
+            CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS=>json_encode($payload), CURLOPT_TIMEOUT=>30]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) { $lastError = 'خطأ في الاتصال: '.$curlErr; continue; }
+        $data = json_decode($response, true);
+        if ($httpCode !== 200 || empty($data['candidates'][0]['content']['parts'][0]['text'])) {
+            $lastError = $data['error']['message'] ?? "فشل النموذج {$model}";
+            continue;
+        }
+        $result = parseJsonResult($data['candidates'][0]['content']['parts'][0]['text']);
+        if (!$result['success']) { $lastError = $result['message']; continue; }
+        $result['model_used'] = $model;
+        $result['provider']   = 'gemini';
+        return $result;
+    }
+    return ['success'=>false, 'message'=>$lastError, 'provider'=>'gemini'];
 }
 
 
@@ -508,6 +601,12 @@ function isProviderConfigured(string $provider, $pdo): bool
 {
     static $cache = [];
     if (isset($cache[$provider])) return $cache[$provider];
+
+    if ($provider === 'targofit') {
+        $cache[$provider] = file_exists(__DIR__ . '/targofit.py');
+        return $cache[$provider];
+    }
+
     $keyMap = [
         'gemini'     => 'gemini_api_key',
         'openai'     => 'openai_api_key',

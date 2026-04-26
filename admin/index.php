@@ -303,11 +303,19 @@ $userName = $_SESSION['user_name'];
                   style="width:220px" placeholder="python3">
               </div>
             </div>
-            <div style="background:var(--bg-card2);border-radius:10px;padding:0.9rem;font-size:0.82rem;color:var(--text-muted);line-height:1.8">
-              <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px"><i class="bi bi-terminal-fill"></i> متطلبات التثبيت</div>
-              <div>الحد الأدنى (تحليل ألوان): <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px">pip install Pillow</code></div>
-              <div style="margin-top:4px">دقة أعلى (BLIP): <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px">pip install transformers torch</code> ثم تشغيل التحميل مرة واحدة</div>
-              <div style="margin-top:6px;color:var(--warning)"><i class="bi bi-exclamation-triangle-fill"></i> يحتاج لمزود AI نصي مُعدّ (Gemini أو Groq) ليُرسل له الوصف</div>
+            <div style="background:var(--bg-card2);border-radius:10px;padding:0.9rem;font-size:0.82rem;color:var(--text-muted)">
+              <div style="font-weight:700;color:var(--text-primary);margin-bottom:8px"><i class="bi bi-terminal-fill"></i> تثبيت المكتبات (حسب الدقة المطلوبة)</div>
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <div><span style="color:var(--text-muted)">الحد الأدنى:</span>
+                  <code style="background:var(--bg-card);padding:2px 7px;border-radius:4px;margin-right:4px">pip install Pillow</code></div>
+                <div><span style="color:var(--primary)">موصى (OpenCV):</span>
+                  <code style="background:var(--bg-card);padding:2px 7px;border-radius:4px;margin-right:4px">pip install opencv-python numpy</code></div>
+                <div><span style="color:var(--warning)">علمي (scikit-image):</span>
+                  <code style="background:var(--bg-card);padding:2px 7px;border-radius:4px;margin-right:4px">pip install scikit-image numpy</code></div>
+                <div><span style="color:var(--success)">AI (BLIP):</span>
+                  <code style="background:var(--bg-card);padding:2px 7px;border-radius:4px;margin-right:4px">pip install transformers torch</code></div>
+              </div>
+              <div style="margin-top:8px;color:var(--warning)"><i class="bi bi-exclamation-triangle-fill"></i> يحتاج لمزود AI نصي مُعدّ (Gemini أو Groq) ليُرسل له الوصف</div>
             </div>
           </div>
 
@@ -370,14 +378,28 @@ $userName = $_SESSION['user_name'];
           </ol>
         </div>
         <div id="setup-guide-targofit" style="display:none">
-          <ol style="padding-right:1.2rem;display:flex;flex-direction:column;gap:8px;color:var(--text-muted);font-size:0.9rem;line-height:1.7">
-            <li>تأكد من تثبيت <strong style="color:var(--primary)">Python3</strong> على الخادم: <code>python3 --version</code></li>
-            <li>ثبّت Pillow (الحد الأدنى): <code>pip install Pillow</code></li>
-            <li>اختياري — للدقة الأعلى ثبّت BLIP: <code>pip install transformers torch</code></li>
-            <li>أنشئ cache النموذج مرة واحدة فقط من سطر الأوامر (إن أردت BLIP)</li>
-            <li>يجب إعداد مزود AI نصي (Gemini أو Groq) لأن Targofit يبعث له الوصف كنص</li>
-            <li><strong>⚡ الميزة الأساسية</strong>: يعمل حتى لو فشلت جميع نماذج الصور — يحوّل الصورة لنص ويسأل أي AI نصي</li>
-          </ol>
+          <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-bottom:8px"><i class="bi bi-layers-fill"></i> طبقات التحليل (من الأقوى للاحتياطي)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+            <?php foreach([
+              ['🤖','BLIP (transformers + torch)','دقة AI — يصف محتوى الصورة كاملاً','pip install transformers torch','var(--success)'],
+              ['🎯','OpenCV (cv2 + numpy)',       'K-means dominant colors + تحليل ملمس Canny','pip install opencv-python numpy','var(--primary)'],
+              ['🔬','scikit-image (skimage + numpy)','تحليل GLCM + ألوان Lab space','pip install scikit-image numpy','var(--warning)'],
+              ['🖼️','Pillow فقط',               'مسح بكسل بسيط — الحد الأدنى','pip install Pillow','var(--text-muted)'],
+            ] as [$icon,$name,$desc,$cmd,$color]): ?>
+            <div style="display:flex;align-items:flex-start;gap:10px;background:var(--bg-card2);border-radius:8px;padding:8px 12px">
+              <span style="font-size:1.1rem;flex-shrink:0"><?=$icon?></span>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:0.85rem;color:<?=$color?>"><?=$name?></div>
+                <div style="font-size:0.78rem;color:var(--text-muted)"><?=$desc?></div>
+                <code style="font-size:0.78rem;background:var(--bg-card);padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block"><?=$cmd?></code>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+          <div style="background:rgba(255,193,7,0.1);border:1px solid var(--warning);border-radius:8px;padding:10px;font-size:0.82rem;color:var(--text-muted)">
+            <i class="bi bi-exclamation-triangle-fill" style="color:var(--warning)"></i>
+            <strong> مهم:</strong> يجب إعداد مزود AI نصي (Gemini أو Groq) — Targofit يحوّل الصورة لنص ثم يبعثه له.
+          </div>
         </div>
       </div>
     </section>

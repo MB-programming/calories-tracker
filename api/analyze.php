@@ -466,12 +466,18 @@ function callTargofitVision($pdo, string $imageData): array
     }
 
     // ── Step 2: Build text prompt from description ──
-    $desc   = $pyResult['description'];
-    $method = $pyResult['method'] ?? 'analysis';
-    $hint   = $pyResult['arabic_hint'] ?? '';
+    $desc      = $pyResult['description'];
+    $method    = $pyResult['method'] ?? 'analysis';
+    $colorHint = $pyResult['color_hint'] ?? '';   // BLIP tier enrichment
+    $texture   = $pyResult['texture']    ?? '';
 
     $systemMsg = 'أنت خبير تغذية. عندما يسألك المستخدم عن طعام أو يصفه، أعط القيم الغذائية بصيغة JSON فقط بدون أي نص إضافي: {"food_name":"...","calories":0,"protein":0,"carbs":0,"fat":0,"description":"...","confidence":"medium"}. إذا كان الوصف غير واضح، أعد {"error":"يرجى وصف الطعام أو الكمية بشكل أوضح"}.';
-    $userMsg = "وصف الصورة: {$desc}" . ($hint && $hint !== $desc ? "\nمؤشرات إضافية: {$hint}" : '');
+
+    $extra = '';
+    if ($colorHint && $colorHint !== $desc) $extra .= "\nمؤشرات ألوان: {$colorHint}";
+    if ($texture)                            $extra .= "\nملمس الطعام: {$texture}";
+
+    $userMsg = "وصف الصورة ({$method}): {$desc}{$extra}";
 
     // ── Step 3: Try text providers in fallback order ──
     $primary   = getSetting($pdo, 'ai_provider', 'gemini');
